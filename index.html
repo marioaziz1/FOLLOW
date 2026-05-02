@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>متابعة العملاء</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     CSS VARIABLES & RESET
+  ============================================ */
+  :root {
+    --bg: #0f0f13;
+    --surface: #18181f;
+    --surface2: #21212b;
+    --surface3: #2a2a38;
+    --border: #2e2e3e;
+    --accent: #6c63ff;
+    --accent-glow: rgba(108, 99, 255, 0.3);
+    --accent2: #25d366;
+    --accent2-glow: rgba(37, 211, 102, 0.25);
+    --danger: #ff5f6d;
+    --warn: #ffb347;
+    --text: #eeeef5;
+    --text2: #9595ab;
+    --text3: #5a5a72;
+    --card-needs: rgba(108, 99, 255, 0.08);
+    --card-needs-border: rgba(108, 99, 255, 0.5);
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --font: 'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================================
+     APP SHELL
+  ============================================ */
+  #app {
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 100px;
+  }
+
+  /* ============================================
+     HEADER
+  ============================================ */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,15,19,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .header-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .header-sub {
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+
+  .header-actions { display: flex; gap: 8px; }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    -webkit-appearance: none;
+  }
+  .icon-btn:active { transform: scale(0.92); background: var(--surface3); }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ============================================
+     STATS BAR
+  ============================================ */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    padding: 16px 20px;
+    animation: fadeInDown 0.4s ease both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.green { color: var(--accent2); }
+
+  .stat-label {
+    font-size: 0.68rem;
+    color: var(--text3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* ============================================
+     TABS
+  ============================================ */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 20px 14px;
+    animation: fadeInDown 0.4s 0.05s ease both;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    -webkit-appearance: none;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 18px var(--accent-glow);
+  }
+
+  .tab-btn:active { transform: scale(0.96); }
+
+  /* ============================================
+     SEARCH BAR
+  ============================================ */
+  .search-wrap {
+    padding: 0 20px 14px;
+    animation: fadeInDown 0.4s 0.1s ease both;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    padding: 10px 14px 10px 40px;
+    outline: none;
+    transition: var(--transition);
+    direction: rtl;
+  }
+
+  .search-wrap { position: relative; }
+  .search-icon {
+    position: absolute;
+    left: 34px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    pointer-events: none;
+    font-size: 15px;
+  }
+
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  /* ============================================
+     CLIENT CARDS
+  ============================================ */
+  .clients-list {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .client-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    animation: fadeInUp 0.35s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .client-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    transition: var(--transition);
+  }
+
+  .client-card.needs-followup {
+    background: var(--card-needs);
+    border-color: var(--card-needs-border);
+    box-shadow: 0 0 24px rgba(108,99,255,0.12), inset 0 0 0 1px rgba(108,99,255,0.15);
+  }
+
+  .client-card.needs-followup::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    border-radius: var(--radius) var(--radius) 0 0;
+    animation: pulseBar 2s ease-in-out infinite;
+  }
+
+  .client-card:active { transform: scale(0.98); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .card-left { display: flex; align-items: center; gap: 12px; }
+
+  .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--surface3), var(--surface2));
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .avatar-text { position: relative; z-index: 1; }
+
+  .client-name {
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+    color: var(--text);
+  }
+
+  .client-phone {
+    font-size: 0.76rem;
+    color: var(--text3);
+    direction: ltr;
+    unicode-bidi: plaintext;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .badge-needs {
+    background: rgba(108,99,255,0.2);
+    color: #a78bfa;
+    border: 1px solid rgba(108,99,255,0.4);
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+
+  .badge-ok {
+    background: rgba(37,211,102,0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(37,211,102,0.3);
+  }
+
+  .card-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .card-stat {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: var(--radius-xs);
+    padding: 8px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .card-stat-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .card-stat-lbl {
+    font-size: 0.6rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .today-val { color: var(--accent); }
+  .total-val { color: var(--text2); }
+  .time-val { color: var(--text3); font-size: 0.7rem !important; }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    -webkit-appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .btn:active { transform: scale(0.94); }
+
+  .btn-wa {
+    flex: 1;
+    background: var(--accent2);
+    color: #fff;
+    border-radius: var(--radius-xs);
+    font-size: 0.8rem;
+    padding: 9px 12px;
+    box-shadow: 0 4px 14px rgba(37,211,102,0.3);
+  }
+
+  .btn-wa:hover { background: #20bd5a; box-shadow: 0 6px 20px rgba(37,211,102,0.4); }
+
+  .btn-remind {
+    flex: 2;
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--radius-xs);
+    font-size: 0.82rem;
+    padding: 9px 12px;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+
+  .btn-remind:hover { background: #7c73ff; }
+
+  .btn-edit {
+    width: 36px;
+    height: 36px;
+    background: var(--surface2);
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-xs);
+    color: var(--text2);
+    font-size: 14px;
+    padding: 0;
+    border: none;
+  }
+
+  .btn-edit:hover { color: var(--text); background: var(--surface3); }
+
+  /* ============================================
+     EMPTY STATE
+  ============================================ */
+  .empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .empty-icon {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .empty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+
+  .empty-sub {
+    font-size: 0.85rem;
+    color: var(--text3);
+    line-height: 1.6;
+  }
+
+  /* ============================================
+     DRAFTS VIEW
+  ============================================ */
+  .drafts-list {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .draft-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    animation: fadeInUp 0.35s ease both;
+  }
+
+  .draft-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .draft-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .draft-actions { display: flex; gap: 6px; }
+
+  .btn-sm {
+    -webkit-appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 6px;
+    transition: var(--transition);
+  }
+
+  .btn-sm:active { transform: scale(0.94); }
+  .btn-sm-edit { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-sm-delete { background: rgba(255,95,109,0.15); color: var(--danger); border: 1px solid rgba(255,95,109,0.3); }
+
+  .draft-body {
+    font-size: 0.82rem;
+    color: var(--text2);
+    line-height: 1.6;
+    background: var(--surface2);
+    border-radius: var(--radius-xs);
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ============================================
+     BOTTOM BAR
+  ============================================ */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 520px;
+    background: rgba(15,15,19,0.9);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 200;
+  }
+
+  .btn-bar {
+    -webkit-appearance: none;
+    flex: 1;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+  }
+
+  .btn-bar:active { transform: scale(0.96); }
+
+  .btn-bar-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 18px var(--accent-glow);
+  }
+
+  .btn-bar-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ============================================
+     MODALS & OVERLAYS
+  ============================================ */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .overlay.center {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 8px 20px 32px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .overlay.open .sheet { transform: translateY(0); }
+
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+  }
+
+  .overlay.open .modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 10px auto 20px;
+  }
+
+  .sheet-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--text);
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  /* ============================================
+     FORM ELEMENTS
+  ============================================ */
+  .field {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    padding: 11px 14px;
+    outline: none;
+    transition: var(--transition);
+    -webkit-appearance: none;
+    direction: rtl;
+  }
+
+  input[type="tel"] {
+    direction: ltr;
+    unicode-bidi: plaintext;
+    text-align: right;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-full {
+    -webkit-appearance: none;
+    flex: 1;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 13px;
+    transition: var(--transition);
+  }
+
+  .btn-full:active { transform: scale(0.97); }
+  .btn-save { background: var(--accent); color: #fff; box-shadow: 0 4px 14px var(--accent-glow); }
+  .btn-cancel { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* ============================================
+     DRAFT PICKER SHEET
+  ============================================ */
+  .draft-pick-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .draft-pick-item:active { transform: scale(0.98); }
+
+  .draft-pick-item:hover {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.08);
+  }
+
+  .draft-pick-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--text);
+  }
+
+  .draft-pick-preview {
+    font-size: 0.77rem;
+    color: var(--text3);
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* ============================================
+     SUCCESS ANIMATION
+  ============================================ */
+  .success-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, #1a3a2a, #1e4433);
+    color: var(--accent2);
+    border: 1px solid rgba(37,211,102,0.4);
+    border-radius: var(--radius-sm);
+    padding: 12px 22px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    z-index: 999;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    white-space: nowrap;
+    box-shadow: 0 8px 30px rgba(37,211,102,0.2);
+    pointer-events: none;
+  }
+
+  .success-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ============================================
+     CLIENT DETAIL MODAL SPECIFIC
+  ============================================ */
+  .detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 auto 14px;
+    box-shadow: 0 0 28px var(--accent-glow);
+  }
+
+  .detail-name {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .detail-phone {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text3);
+    direction: ltr;
+    margin-bottom: 20px;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .btn-danger {
+    -webkit-appearance: none;
+    flex: 1;
+    border: none;
+    background: rgba(255,95,109,0.15);
+    color: var(--danger);
+    border: 1px solid rgba(255,95,109,0.3);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-danger:active { transform: scale(0.96); }
+
+  .last-reminder-info {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text3);
+    padding: 12px;
+    background: var(--surface2);
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+  }
+
+  /* ============================================
+     NOTIFICATION BANNER
+  ============================================ */
+  .notif-banner {
+    margin: 0 20px 12px;
+    background: rgba(255,179,71,0.1);
+    border: 1px solid rgba(255,179,71,0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeInDown 0.4s ease;
+  }
+
+  .notif-icon { font-size: 1.2rem; }
+  .notif-text { font-size: 0.8rem; color: var(--warn); font-weight: 600; line-height: 1.4; }
+
+  /* ============================================
+     ANIMATIONS
+  ============================================ */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulseBar {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.3); }
+    50% { box-shadow: 0 0 0 4px rgba(108,99,255,0); }
+  }
+
+  @keyframes successPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .card-anim-delay-1 { animation-delay: 0.05s; }
+  .card-anim-delay-2 { animation-delay: 0.1s; }
+  .card-anim-delay-3 { animation-delay: 0.15s; }
+  .card-anim-delay-4 { animation-delay: 0.2s; }
+  .card-anim-delay-5 { animation-delay: 0.25s; }
+
+  /* ============================================
+     SCROLLBAR
+  ============================================ */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ============================================
+     SEND SUCCESS RIPPLE ON CARD
+  ============================================ */
+  .sent-flash {
+    animation: sentFlash 0.5s ease;
+  }
+
+  @keyframes sentFlash {
+    0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+    100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+  }
+
+  /* RTL tweaks */
+  .search-input { padding: 10px 40px 10px 14px; }
+  .search-icon { right: 34px; left: auto; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-icon">📋</div>
+      <div>
+        <div class="header-title">متابعة العملاء</div>
+        <div class="header-sub" id="today-date">—</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="requestNotifPermission()" title="تفعيل الإشعارات">🔔</button>
+      <button class="icon-btn" onclick="openSettingsModal()" title="الإعدادات">⚙️</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-card">
+      <div class="stat-value accent" id="stat-total">0</div>
+      <div class="stat-label">إجمالي العملاء</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value warn" id="stat-needs">0</div>
+      <div class="stat-label">تحتاج متابعة</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value green" id="stat-sent">0</div>
+      <div class="stat-label">أُرسل اليوم</div>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="notif-banner" class="notif-banner" style="display:none;">
+    <span class="notif-icon">⚠️</span>
+    <span class="notif-text" id="notif-text"></span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('clients', this)">العملاء</button>
+    <button class="tab-btn" onclick="switchTab('drafts', this)">الرسائل</button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap" id="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input" placeholder="ابحث عن عميل..." oninput="renderClients()">
+  </div>
+
+  <!-- Content -->
+  <div id="content-clients">
+    <div class="clients-list" id="clients-list"></div>
+  </div>
+
+  <div id="content-drafts" style="display:none;">
+    <div class="drafts-list" id="drafts-list"></div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button class="btn-bar btn-bar-secondary" onclick="openAddDraftModal()">➕ رسالة جديدة</button>
+    <button class="btn-bar btn-bar-primary" onclick="openAddClientModal()">👤 إضافة عميل</button>
+  </div>
+</div>
+
+<!-- ======== OVERLAYS ======== -->
+
+<!-- Add/Edit Client Sheet -->
+<div class="overlay" id="overlay-client" onclick="closeOnOverlay(event, 'overlay-client')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="client-form-title">إضافة عميل جديد</div>
+    <input type="hidden" id="client-id">
+    <div class="field">
+      <label>الاسم *</label>
+      <input type="text" id="client-name" placeholder="اسم العميل">
+    </div>
+    <div class="field">
+      <label>رقم الواتساب *</label>
+      <input type="tel" id="client-phone" placeholder="مثال: 201234567890">
+    </div>
+    <div class="form-actions">
+      <button class="btn-full btn-cancel" onclick="closeModal('overlay-client')">إلغاء</button>
+      <button class="btn-full btn-save" onclick="saveClient()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Draft Pick Sheet -->
+<div class="overlay" id="overlay-pick-draft" onclick="closeOnOverlay(event, 'overlay-pick-draft')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">اختر رسالة للإرسال</div>
+    <div id="draft-pick-list"></div>
+    <div style="margin-top:10px;">
+      <button class="btn-full btn-cancel" onclick="closeModal('overlay-pick-draft')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Draft Modal -->
+<div class="overlay center" id="overlay-draft" onclick="closeOnOverlay(event, 'overlay-draft')">
+  <div class="modal">
+    <div class="modal-title" id="draft-form-title">رسالة جديدة</div>
+    <input type="hidden" id="draft-id">
+    <div class="field">
+      <label>عنوان الرسالة *</label>
+      <input type="text" id="draft-title" placeholder="مثال: تذكير شهري">
+    </div>
+    <div class="field">
+      <label>نص الرسالة *</label>
+      <textarea id="draft-message" placeholder="مرحباً {{name}}، هذا تذكير..."></textarea>
+    </div>
+    <div style="font-size:0.72rem;color:var(--text3);margin-bottom:12px;">💡 استخدم {{name}} لإدراج اسم العميل تلقائياً</div>
+    <div class="form-actions">
+      <button class="btn-full btn-cancel" onclick="closeModal('overlay-draft')">إلغاء</button>
+      <button class="btn-full btn-save" onclick="saveDraft()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Detail Sheet -->
+<div class="overlay" id="overlay-client-detail" onclick="closeOnOverlay(event, 'overlay-client-detail')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div id="client-detail-content"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay center" id="overlay-settings" onclick="closeOnOverlay(event, 'overlay-settings')">
+  <div class="modal">
+    <div class="modal-title">⚙️ الإعدادات</div>
+    <div class="field">
+      <label>وقت الإعادة اليومية</label>
+      <input type="text" id="reset-time-input" placeholder="06:00">
+    </div>
+    <div style="font-size:0.75rem;color:var(--text3);margin-bottom:16px;">يُعاد تعيين عدد المتابعات اليومية عند هذا الوقت</div>
+    <div class="form-actions">
+      <button class="btn-full btn-cancel" onclick="closeModal('overlay-settings')">إغلاق</button>
+      <button class="btn-full btn-save" onclick="saveSettings()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Toast -->
+<div class="success-toast" id="success-toast">✅ تم الإرسال بنجاح!</div>
+
+<script>
+// ============================================
+// LOCAL STORAGE HELPERS
+// ============================================
+
+function getClients() {
+  try { return JSON.parse(localStorage.getItem('fu_clients') || '[]'); }
+  catch { return []; }
+}
+
+function saveClients(clients) {
+  localStorage.setItem('fu_clients', JSON.stringify(clients));
+}
+
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem('fu_drafts') || '[]'); }
+  catch { return []; }
+}
+
+function saveDrafts(drafts) {
+  localStorage.setItem('fu_drafts', JSON.stringify(drafts));
+}
+
+function getAppState() {
+  try { return JSON.parse(localStorage.getItem('fu_state') || '{}'); }
+  catch { return {}; }
+}
+
+function saveAppState(state) {
+  localStorage.setItem('fu_state', JSON.stringify(state));
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// ============================================
+// DAILY RESET LOGIC
+// ============================================
+
+function getResetHour() {
+  const state = getAppState();
+  const t = state.dailyResetTime || '06:00';
+  return parseInt(t.split(':')[0]) || 6;
+}
+
+function getEffectiveDate(now) {
+  const h = now.getHours();
+  const resetHour = getResetHour();
+  if (h < resetHour) {
+    const prev = new Date(now);
+    prev.setDate(prev.getDate() - 1);
+    return prev.toISOString().slice(0, 10);
+  }
+  return now.toISOString().slice(0, 10);
+}
+
+function handleDailyReset() {
+  const now = new Date();
+  const effectiveDate = getEffectiveDate(now);
+  const state = getAppState();
+
+  if (state.lastAppOpenDate !== effectiveDate) {
+    const clients = getClients().map(c => ({ ...c, reminderCountToday: 0 }));
+    saveClients(clients);
+    state.lastAppOpenDate = effectiveDate;
+    saveAppState(state);
+  }
+}
+
+// ============================================
+// CLIENT STATUS EVALUATION
+// ============================================
+
+function evaluateClientStatus(client) {
+  if (client.reminderCountToday === 0) return 'needs';
+  if (client.lastReminderDate) {
+    const diff = Date.now() - client.lastReminderDate;
+    if (diff > 24 * 60 * 60 * 1000) return 'needs';
+  }
+  return 'ok';
+}
+
+// ============================================
+// SEND REMINDER
+// ============================================
+
+let pendingClientId = null;
+
+function sendReminder(clientId, draftId, btn) {
+  // Defensive: resolve data immediately
+  const clients = getClients();
+  const drafts  = getDrafts();
+  const client  = clients.find(c => c.id === clientId);
+  const draft   = drafts.find(d => d.id === draftId);
+
+  if (!client) { showToast('❌ العميل غير موجود، أعد تحميل الصفحة'); return; }
+  if (!draft)  { showToast('❌ الرسالة غير موجودة، اختر رسالة أخرى'); return; }
+
+  const rawMessage = draft.message || '';
+  if (!rawMessage.trim()) { showToast('❌ الرسالة فارغة'); return; }
+
+  const phone = formatPhone(client.phone);
+  if (!phone || phone.length < 10) {
+    showToast('❌ رقم الهاتف غير صالح: ' + client.phone);
+    return;
+  }
+
+  // Build message — safe replace
+  const message = rawMessage.replace(/\{\{name\}\}/g, client.name || '');
+
+  console.log('[sendReminder] client:', client.name);
+  console.log('[sendReminder] phone:', phone);
+  console.log('[sendReminder] message:', message);
+
+  // Debounce button
+  if (btn) { btn.disabled = true; setTimeout(() => { btn.disabled = false; }, 1500); }
+
+  // Build WhatsApp URL
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+  // 1. Persist FIRST — before any navigation
+  const updated = clients.map(c => {
+    if (c.id !== clientId) return c;
+    return {
+      ...c,
+      reminderCountTotal: (c.reminderCountTotal || 0) + 1,
+      reminderCountToday: (c.reminderCountToday || 0) + 1,
+      lastReminderDate: Date.now()
+    };
+  });
+  saveClients(updated);
+
+  // 2. Close sheet + light UI update (no heavy re-render before navigation)
+  closeModal('overlay-pick-draft');
+  showToast('✅ جارٍ فتح واتساب…');
+
+  // 3. Flash the card (non-blocking visual)
+  const card = document.querySelector(`[data-id="${clientId}"]`);
+  if (card) {
+    card.classList.add('sent-flash');
+    setTimeout(() => card.classList.remove('sent-flash'), 600);
+  }
+
+  // 4. Update stats bar only (cheap, non-blocking)
+  setTimeout(() => renderStats(), 300);
+  setTimeout(() => renderClients(), 400);
+
+  // 5. Navigate — must be synchronous from user gesture; use href for mobile compat
+  window.location.href = url;
+}
+
+// ============================================
+// UI RENDERING
+// ============================================
+
+function renderAll() {
+  renderStats();
+  renderClients();
+  renderDrafts();
+  renderNotifBanner();
+}
+
+function renderStats() {
+  const clients = getClients();
+  const needs = clients.filter(c => evaluateClientStatus(c) === 'needs').length;
+  const sentToday = clients.reduce((a, c) => a + (c.reminderCountToday || 0), 0);
+
+  document.getElementById('stat-total').textContent = clients.length;
+  document.getElementById('stat-needs').textContent = needs;
+  document.getElementById('stat-sent').textContent = sentToday;
+}
+
+function renderClients() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  let clients = getClients();
+
+  if (search) {
+    clients = clients.filter(c =>
+      c.name.toLowerCase().includes(search) ||
+      (c.phone || '').includes(search)
+    );
+  }
+
+  // Sort: needs first
+  clients.sort((a, b) => {
+    const sa = evaluateClientStatus(a) === 'needs' ? 0 : 1;
+    const sb = evaluateClientStatus(b) === 'needs' ? 0 : 1;
+    return sa - sb;
+  });
+
+  const list = document.getElementById('clients-list');
+
+  if (clients.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">👥</div>
+      <div class="empty-title">${search ? 'لا توجد نتائج' : 'لا يوجد عملاء بعد'}</div>
+      <div class="empty-sub">${search ? 'جرب كلمة بحث أخرى' : 'أضف أول عميل لك لبدء المتابعة'}</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = clients.map((c, i) => {
+    const status = evaluateClientStatus(c);
+    const needs = status === 'needs';
+    const delay = i < 5 ? `card-anim-delay-${i}` : '';
+    const lastStr = c.lastReminderDate
+      ? formatRelativeTime(c.lastReminderDate)
+      : 'لم يُرسل بعد';
+
+    return `<div class="client-card ${needs ? 'needs-followup' : ''} ${delay}" data-id="${c.id}">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="avatar"><span class="avatar-text">${getInitials(c.name)}</span></div>
+          <div>
+            <div class="client-name">${escHtml(c.name)}</div>
+            <div class="client-phone" dir="ltr">${escHtml(c.phone)}</div>
+          </div>
+        </div>
+        <span class="badge ${needs ? 'badge-needs' : 'badge-ok'}">${needs ? '⚠ متابعة' : '✓ تم'}</span>
+      </div>
+
+      <div class="card-stats">
+        <div class="card-stat">
+          <div class="card-stat-val today-val">${c.reminderCountToday || 0}</div>
+          <div class="card-stat-lbl">اليوم</div>
+        </div>
+        <div class="card-stat">
+          <div class="card-stat-val total-val">${c.reminderCountTotal || 0}</div>
+          <div class="card-stat-lbl">الإجمالي</div>
+        </div>
+        <div class="card-stat">
+          <div class="card-stat-val time-val">${lastStr}</div>
+          <div class="card-stat-lbl">آخر إرسال</div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn btn-wa"     data-action="wa"     data-id="${c.id}">📱 واتساب</button>
+        <button class="btn btn-remind" data-action="remind" data-id="${c.id}">📩 إرسال تذكير</button>
+        <button class="btn btn-edit"   data-action="detail" data-id="${c.id}">•••</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDrafts() {
+  const drafts = getDrafts();
+  const list = document.getElementById('drafts-list');
+
+  if (drafts.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✉️</div>
+      <div class="empty-title">لا توجد رسائل بعد</div>
+      <div class="empty-sub">أضف رسائل جاهزة لاستخدامها عند إرسال التذكيرات</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = drafts.map((d, i) => {
+    const delay = i < 5 ? `card-anim-delay-${i}` : '';
+    return `<div class="draft-card ${delay}">
+      <div class="draft-header">
+        <div class="draft-title">✉️ ${escHtml(d.title)}</div>
+        <div class="draft-actions">
+          <button class="btn-sm btn-sm-edit" onclick="openEditDraftModal('${d.id}')">تعديل</button>
+          <button class="btn-sm btn-sm-delete" onclick="deleteDraft('${d.id}')">حذف</button>
+        </div>
+      </div>
+      <div class="draft-body">${escHtml(d.message)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderNotifBanner() {
+  const clients = getClients();
+  const needsCount = clients.filter(c => evaluateClientStatus(c) === 'needs').length;
+  const banner = document.getElementById('notif-banner');
+
+  if (needsCount > 0) {
+    document.getElementById('notif-text').textContent =
+      `لديك ${needsCount} عميل${needsCount > 1 ? '' : ''} يحتاج${needsCount > 1 ? 'ون' : ''} متابعة اليوم`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ============================================
+// CLIENT OPERATIONS
+// ============================================
+
+function openAddClientModal() {
+  document.getElementById('client-form-title').textContent = 'إضافة عميل جديد';
+  document.getElementById('client-id').value = '';
+  document.getElementById('client-name').value = '';
+  document.getElementById('client-phone').value = '';
+  openModal('overlay-client');
+}
+
+function openEditClientModal(clientId) {
+  const client = getClients().find(c => c.id === clientId);
+  if (!client) return;
+  document.getElementById('client-form-title').textContent = 'تعديل العميل';
+  document.getElementById('client-id').value = client.id;
+  document.getElementById('client-name').value = client.name;
+  document.getElementById('client-phone').value = client.phone;
+  closeModal('overlay-client-detail');
+  openModal('overlay-client');
+}
+
+function saveClient() {
+  const id    = document.getElementById('client-id').value;
+  const name  = document.getElementById('client-name').value.trim();
+  const phone = document.getElementById('client-phone').value.trim();
+
+  if (!name)  { shakeField('client-name');  showToast('❌ أدخل اسم العميل'); return; }
+  if (!phone) { shakeField('client-phone'); showToast('❌ أدخل رقم الهاتف'); return; }
+
+  // Validate digits length
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10) {
+    shakeField('client-phone');
+    showToast('❌ رقم الهاتف قصير جداً (10 أرقام على الأقل)');
+    return;
+  }
+
+  const clients = getClients();
+
+  if (id) {
+    const idx = clients.findIndex(c => c.id === id);
+    if (idx >= 0) clients[idx] = { ...clients[idx], name, phone };
+  } else {
+    clients.push({
+      id: generateId(),
+      name,
+      phone,
+      reminderCountTotal: 0,
+      reminderCountToday: 0,
+      lastReminderDate: null,
+      createdAt: Date.now()
+    });
+  }
+
+  saveClients(clients);
+  closeModal('overlay-client');
+  showToast('✅ تم الحفظ!');
+  renderAll();
+}
+
+function deleteClient(clientId) {
+  if (!confirm('هل تريد حذف هذا العميل؟')) return;
+  const clients = getClients().filter(c => c.id !== clientId);
+  saveClients(clients);
+  closeModal('overlay-client-detail');
+  showToast('🗑 تم الحذف');
+  renderAll();
+}
+
+function openClientDetail(clientId) {
+  const c = getClients().find(c => c.id === clientId);
+  if (!c) return;
+  const status = evaluateClientStatus(c);
+  const lastStr = c.lastReminderDate ? formatRelativeTime(c.lastReminderDate) : 'لم يُرسل بعد';
+
+  document.getElementById('client-detail-content').innerHTML = `
+    <div class="detail-avatar">${getInitials(c.name)}</div>
+    <div class="detail-name">${escHtml(c.name)}</div>
+    <div class="detail-phone" dir="ltr">${escHtml(c.phone)}</div>
+    <div class="last-reminder-info" style="margin-bottom:16px;">
+      📅 آخر إرسال: ${lastStr} &nbsp;|&nbsp; 📊 الإجمالي: ${c.reminderCountTotal || 0}
+    </div>
+    <div class="detail-actions">
+      <button class="btn-full btn-save" style="flex:2;" onclick="openEditClientModal('${c.id}')">✏️ تعديل</button>
+      <button class="btn-danger" onclick="deleteClient('${c.id}')">🗑 حذف</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <button class="btn btn-wa" style="flex:1;padding:12px;"
+              onclick="openWhatsApp('${c.id}', this)">📱 فتح واتساب</button>
+      <button class="btn btn-remind" style="flex:1;padding:12px;"
+              onclick="closeModal('overlay-client-detail');openPickDraft('${c.id}')">📩 إرسال تذكير</button>
+    </div>
+  `;
+  openModal('overlay-client-detail');
+}
+
+function openWhatsApp(clientId, btn) {
+  const c = getClients().find(c => c.id === clientId);
+  if (!c) { showToast('❌ العميل غير موجود'); return; }
+
+  const phone = formatPhone(c.phone);
+  if (!phone || phone.length < 10) {
+    showToast('❌ رقم الهاتف غير صالح');
+    return;
+  }
+
+  // Debounce double-tap
+  if (btn) { btn.disabled = true; setTimeout(() => { btn.disabled = false; }, 1500); }
+
+  console.log('[openWhatsApp] client:', c.name, '| phone:', phone);
+  const url = `https://wa.me/${phone}`;
+  window.location.href = url;
+}
+
+// ============================================
+// DRAFT OPERATIONS
+// ============================================
+
+function openAddDraftModal() {
+  document.getElementById('draft-form-title').textContent = 'رسالة جديدة';
+  document.getElementById('draft-id').value = '';
+  document.getElementById('draft-title').value = '';
+  document.getElementById('draft-message').value = '';
+  openModal('overlay-draft');
+}
+
+function openEditDraftModal(draftId) {
+  const d = getDrafts().find(d => d.id === draftId);
+  if (!d) return;
+  document.getElementById('draft-form-title').textContent = 'تعديل الرسالة';
+  document.getElementById('draft-id').value = d.id;
+  document.getElementById('draft-title').value = d.title;
+  document.getElementById('draft-message').value = d.message;
+  openModal('overlay-draft');
+}
+
+function saveDraft() {
+  const id = document.getElementById('draft-id').value;
+  const title = document.getElementById('draft-title').value.trim();
+  const message = document.getElementById('draft-message').value.trim();
+
+  if (!title || !message) { shakeField(title ? 'draft-message' : 'draft-title'); return; }
+
+  const drafts = getDrafts();
+  if (id) {
+    const idx = drafts.findIndex(d => d.id === id);
+    if (idx >= 0) drafts[idx] = { ...drafts[idx], title, message };
+  } else {
+    drafts.push({ id: generateId(), title, message });
+  }
+
+  saveDrafts(drafts);
+  closeModal('overlay-draft');
+  showToast('✅ تم الحفظ!');
+  renderAll();
+}
+
+function deleteDraft(draftId) {
+  if (!confirm('هل تريد حذف هذه الرسالة؟')) return;
+  saveDrafts(getDrafts().filter(d => d.id !== draftId));
+  showToast('🗑 تم الحذف');
+  renderAll();
+}
+
+function openPickDraft(clientId) {
+  pendingClientId = clientId;
+  const drafts = getDrafts();
+  const list   = document.getElementById('draft-pick-list');
+
+  if (drafts.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:30px 0;">
+      <div class="empty-icon">✉️</div>
+      <div class="empty-title">لا توجد رسائل</div>
+      <div class="empty-sub">أضف رسالة أولاً من تبويب "الرسائل"</div>
+    </div>`;
+  } else {
+    const client = getClients().find(c => c.id === clientId);
+    list.innerHTML = drafts.map(d => {
+      const preview = client
+        ? (d.message || '').replace(/\{\{name\}\}/g, client.name)
+        : (d.message || '');
+      return `<div class="draft-pick-item"
+                   data-client-id="${clientId}"
+                   data-draft-id="${d.id}">
+        <div class="draft-pick-title">✉️ ${escHtml(d.title)}</div>
+        <div class="draft-pick-preview">${escHtml(preview)}</div>
+      </div>`;
+    }).join('');
+
+    // Attach listeners via JS — not inline onclick — so the button reference is available
+    list.querySelectorAll('.draft-pick-item').forEach(item => {
+      item.addEventListener('click', function() {
+        sendReminder(this.dataset.clientId, this.dataset.draftId, this);
+      });
+    });
+  }
+
+  openModal('overlay-pick-draft');
+}
+
+// ============================================
+// SETTINGS
+// ============================================
+
+function openSettingsModal() {
+  const state = getAppState();
+  document.getElementById('reset-time-input').value = state.dailyResetTime || '06:00';
+  openModal('overlay-settings');
+}
+
+function saveSettings() {
+  const t = document.getElementById('reset-time-input').value.trim();
+  const state = getAppState();
+  state.dailyResetTime = t || '06:00';
+  saveAppState(state);
+  closeModal('overlay-settings');
+  showToast('✅ تم الحفظ!');
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+function requestNotifPermission() {
+  if ('Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        showToast('🔔 تم تفعيل الإشعارات!');
+        checkAndNotify();
+      } else {
+        showToast('❌ تم رفض الإشعارات');
+      }
+    });
+  }
+}
+
+function checkAndNotify() {
+  if (Notification.permission !== 'granted') return;
+  const needs = getClients().filter(c => evaluateClientStatus(c) === 'needs').length;
+  if (needs > 0) {
+    new Notification('متابعة العملاء', {
+      body: `لديك ${needs} عميل يحتاج متابعة اليوم`,
+      icon: '📋'
+    });
+  }
+}
+
+// ============================================
+// MODAL HELPERS
+// ============================================
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeOnOverlay(event, id) {
+  if (event.target === document.getElementById(id)) closeModal(id);
+}
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.getElementById('content-clients').style.display = tab === 'clients' ? '' : 'none';
+  document.getElementById('content-drafts').style.display = tab === 'drafts' ? '' : 'none';
+  document.getElementById('search-wrap').style.display = tab === 'clients' ? '' : 'none';
+}
+
+// ============================================
+// UTILITY
+// ============================================
+
+// ============================================
+// PHONE NORMALIZATION
+// ============================================
+
+function formatPhone(phone) {
+  if (!phone) return '';
+  let p = String(phone).replace(/\D/g, '');          // strip non-digits
+  if (!p) return '';
+  if (p.startsWith('00')) p = p.slice(2);             // 0020… → 20…
+  if (p.startsWith('0') && p.length <= 11) {          // 01xxxxxxxx → 201xxxxxxxx
+    p = '20' + p.slice(1);
+  }
+  if (!p.startsWith('20') && p.length <= 10) {        // bare 10-digit → assume EG
+    p = '20' + p;
+  }
+  return p;
+}
+
+// ============================================
+
+function showToast(msg) {
+  const t = document.getElementById('success-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function getInitials(name) {
+  return name.trim().charAt(0).toUpperCase();
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatRelativeTime(ts) {
+  if (!ts) return '—';
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hrs = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return 'الآن';
+  if (mins < 60) return `منذ ${mins} د`;
+  if (hrs < 24) return `منذ ${hrs} س`;
+  return `منذ ${days} ي`;
+}
+
+function shakeField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--danger)';
+  el.style.boxShadow = '0 0 0 3px rgba(255,95,109,0.25)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1500);
+  el.focus();
+}
+
+function updateHeaderDate() {
+  const now = new Date();
+  const days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('today-date').textContent =
+    `${days[now.getDay()]}، ${now.getDate()} ${months[now.getMonth()]}`;
+}
+
+// ============================================
+// SEED DEFAULT DRAFTS IF NONE
+// ============================================
+
+function seedDefaultDrafts() {
+  if (getDrafts().length === 0) {
+    saveDrafts([
+      {
+        id: generateId(),
+        title: 'تذكير عام',
+        message: 'السلام عليكم {{name}}،\n\nأردت فقط التواصل معك للاطمئنان ومتابعة احتياجاتك.\n\nهل تحتاج أي مساعدة؟ 😊'
+      },
+      {
+        id: generateId(),
+        title: 'متابعة عرض',
+        message: 'مرحباً {{name}}،\n\nنتابع معك بخصوص العرض الذي أرسلناه مسبقاً.\n\nهل لديك أي استفسارات؟ نحن جاهزون للمساعدة! 🎯'
+      },
+      {
+        id: generateId(),
+        title: 'تذكير دوري',
+        message: 'أهلاً {{name}}،\n\nمجرد تذكير سريع — نحن هنا دائماً لخدمتك.\n\nلا تتردد في التواصل! ✨'
+      }
+    ]);
+  }
+}
+
+// ============================================
+// INIT
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  handleDailyReset();
+  seedDefaultDrafts();
+  updateHeaderDate();
+  renderAll();
+  checkAndNotify();
+
+  // Delegated touch/click handler for client card buttons — works on all mobile browsers
+  document.getElementById('clients-list').addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action   = btn.dataset.action;
+    const clientId = btn.dataset.id;
+    if (btn.disabled) return;
+
+    if (action === 'wa') {
+      btn.disabled = true;
+      setTimeout(() => { btn.disabled = false; }, 1500);
+      openWhatsApp(clientId, btn);
+    } else if (action === 'remind') {
+      openPickDraft(clientId);
+    } else if (action === 'detail') {
+      openClientDetail(clientId);
+    }
+  });
+
+  // Keyboard close
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.overlay.open').forEach(o => {
+        o.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -400,29 +400,23 @@
 
   .btn:active { transform: scale(0.94); }
 
-  .btn-wa {
+  /* btn-wa REMOVED — single send flow only */
+
+  /* RENAMED + UPDATED: btn-send replaces btn-remind, takes full width */
+  .btn-send {
     flex: 1;
-    background: var(--accent2);
+    background: linear-gradient(135deg, var(--accent), #8b7cf8);
     color: #fff;
     border-radius: var(--radius-xs);
-    font-size: 0.8rem;
-    padding: 9px 12px;
-    box-shadow: 0 4px 14px rgba(37,211,102,0.3);
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 11px 14px;
+    box-shadow: 0 4px 18px var(--accent-glow);
+    letter-spacing: 0.01em;
   }
 
-  .btn-wa:hover { background: #20bd5a; box-shadow: 0 6px 20px rgba(37,211,102,0.4); }
-
-  .btn-remind {
-    flex: 2;
-    background: var(--accent);
-    color: #fff;
-    border-radius: var(--radius-xs);
-    font-size: 0.82rem;
-    padding: 9px 12px;
-    box-shadow: 0 4px 14px var(--accent-glow);
-  }
-
-  .btn-remind:hover { background: #7c73ff; }
+  .btn-send:hover { background: linear-gradient(135deg, #7c73ff, #9d8fff); box-shadow: 0 6px 22px var(--accent-glow); }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   .btn-edit {
     width: 36px;
@@ -935,6 +929,114 @@
     100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
   }
 
+  /* ============================================
+     CONFIRMATION MODAL — NEW
+  ============================================ */
+  .confirm-client-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .confirm-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .confirm-client-name {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .confirm-client-phone {
+    font-size: 0.75rem;
+    color: var(--text3);
+    direction: ltr;
+    unicode-bidi: plaintext;
+  }
+
+  .confirm-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .confirm-message-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    color: var(--text2);
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 140px;
+    overflow-y: auto;
+    margin-bottom: 18px;
+  }
+
+  .btn-confirm-send {
+    -webkit-appearance: none;
+    flex: 2;
+    border: none;
+    background: linear-gradient(135deg, var(--accent2), #1eb85a);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 18px rgba(37,211,102,0.35);
+    letter-spacing: 0.01em;
+  }
+
+  .btn-confirm-send:active { transform: scale(0.96); }
+  .btn-confirm-send:hover  { background: linear-gradient(135deg, #20c05c, #17a34a); }
+  .btn-confirm-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Draft picker item — UPDATED: shows selection state, no direct send */
+  .draft-pick-item.selected {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.12);
+    box-shadow: 0 0 0 2px rgba(108,99,255,0.25);
+  }
+
+  .draft-pick-item .pick-check {
+    display: none;
+    color: var(--accent);
+    font-size: 1rem;
+    margin-right: auto;
+    flex-shrink: 0;
+  }
+
+  .draft-pick-item.selected .pick-check { display: block; }
+
   /* RTL tweaks */
   .search-input { padding: 10px 40px 10px 14px; }
   .search-icon { right: 34px; left: auto; }
@@ -1031,14 +1133,42 @@
   </div>
 </div>
 
-<!-- Draft Pick Sheet -->
+<!-- Draft Pick Sheet — UPDATED: select only, no direct send -->
 <div class="overlay" id="overlay-pick-draft" onclick="closeOnOverlay(event, 'overlay-pick-draft')">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">اختر رسالة للإرسال</div>
+    <div class="sheet-title">اختر رسالة</div>
     <div id="draft-pick-list"></div>
     <div style="margin-top:10px;">
       <button class="btn-full btn-cancel" onclick="closeModal('overlay-pick-draft')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal — NEW -->
+<div class="overlay center" id="overlay-confirm-send" onclick="closeOnOverlay(event, 'overlay-confirm-send')">
+  <div class="modal">
+    <div class="modal-title">📤 تأكيد الإرسال</div>
+
+    <!-- Client info -->
+    <div class="confirm-client-block">
+      <div class="confirm-avatar" id="confirm-avatar">—</div>
+      <div>
+        <div class="confirm-client-name" id="confirm-client-name">—</div>
+        <div class="confirm-client-phone" id="confirm-client-phone" dir="ltr">—</div>
+      </div>
+    </div>
+
+    <!-- Message preview -->
+    <div class="confirm-label">الرسالة</div>
+    <div class="confirm-message-box" id="confirm-message-preview"></div>
+
+    <!-- Actions -->
+    <div class="form-actions" style="gap:10px;">
+      <button class="btn-full btn-cancel" style="flex:1;" onclick="closeModal('overlay-confirm-send')">❌ إلغاء</button>
+      <button class="btn-confirm-send" id="btn-confirm-send-action" onclick="confirmSend(this)">
+        ✅ إرسال الآن
+      </button>
     </div>
   </div>
 </div>
@@ -1175,23 +1305,72 @@ function evaluateClientStatus(client) {
 }
 
 // ============================================
-// SEND REMINDER
+// SEND FLOW STATE — NEW
 // ============================================
 
-let pendingClientId = null;
+let selectedClientId = null;   // set when user taps "إرسال" on a card
+let selectedDraftId  = null;   // set when user picks a draft
 
-function sendReminder(clientId, draftId, btn) {
-  // Defensive: resolve data immediately
-  const clients = getClients();
-  const drafts  = getDrafts();
-  const client  = clients.find(c => c.id === clientId);
-  const draft   = drafts.find(d => d.id === draftId);
+// sendReminder — REMOVED (replaced by selectDraft → confirmSend flow)
+// openWhatsApp — REMOVED (no direct WA open from card)
 
-  if (!client) { showToast('❌ العميل غير موجود، أعد تحميل الصفحة'); return; }
-  if (!draft)  { showToast('❌ الرسالة غير موجودة، اختر رسالة أخرى'); return; }
+// ============================================
+// UPDATED: openPickDraft — select only, no send
+// ============================================
 
-  const rawMessage = draft.message || '';
-  if (!rawMessage.trim()) { showToast('❌ الرسالة فارغة'); return; }
+function openPickDraft(clientId) {
+  selectedClientId = clientId;
+  selectedDraftId  = null;       // reset any previous selection
+
+  const drafts = getDrafts();
+  const list   = document.getElementById('draft-pick-list');
+
+  if (drafts.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:30px 0;">
+      <div class="empty-icon">✉️</div>
+      <div class="empty-title">لا توجد رسائل</div>
+      <div class="empty-sub">أضف رسالة أولاً من تبويب "الرسائل"</div>
+    </div>`;
+  } else {
+    const client = getClients().find(c => c.id === clientId);
+    list.innerHTML = drafts.map(d => {
+      const preview = client
+        ? (d.message || '').replace(/\{\{name\}\}/g, client.name)
+        : (d.message || '');
+      return `<div class="draft-pick-item"
+                   data-client-id="${clientId}"
+                   data-draft-id="${d.id}">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div style="flex:1;">
+            <div class="draft-pick-title">✉️ ${escHtml(d.title)}</div>
+            <div class="draft-pick-preview">${escHtml(preview)}</div>
+          </div>
+          <span class="pick-check">✔</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Attach listeners — each tap calls selectDraft, NOT sendReminder
+    list.querySelectorAll('.draft-pick-item').forEach(item => {
+      item.addEventListener('click', function() {
+        selectDraft(this.dataset.clientId, this.dataset.draftId);
+      });
+    });
+  }
+
+  openModal('overlay-pick-draft');
+}
+
+// ============================================
+// NEW: selectDraft — bridge between picker and confirm modal
+// ============================================
+
+function selectDraft(clientId, draftId) {
+  const client = getClients().find(c => c.id === clientId);
+  const draft  = getDrafts().find(d => d.id === draftId);
+
+  if (!client) { showToast('❌ العميل غير موجود'); return; }
+  if (!draft)  { showToast('❌ الرسالة غير موجودة'); return; }
 
   const phone = formatPhone(client.phone);
   if (!phone || phone.length < 10) {
@@ -1199,22 +1378,80 @@ function sendReminder(clientId, draftId, btn) {
     return;
   }
 
-  // Build message — safe replace
-  const message = rawMessage.replace(/\{\{name\}\}/g, client.name || '');
+  // Highlight selected item
+  document.querySelectorAll('.draft-pick-item').forEach(el => el.classList.remove('selected'));
+  const picked = document.querySelector(`.draft-pick-item[data-draft-id="${draftId}"]`);
+  if (picked) picked.classList.add('selected');
 
-  console.log('[sendReminder] client:', client.name);
-  console.log('[sendReminder] phone:', phone);
-  console.log('[sendReminder] message:', message);
+  // Persist selection in module-level state
+  selectedClientId = clientId;
+  selectedDraftId  = draftId;
 
-  // Debounce button
-  if (btn) { btn.disabled = true; setTimeout(() => { btn.disabled = false; }, 1500); }
+  // Build final message with name substituted
+  const finalMessage = (draft.message || '').replace(/\{\{name\}\}/g, client.name || '');
 
-  // Build WhatsApp URL
+  // Populate confirmation modal
+  document.getElementById('confirm-avatar').textContent       = getInitials(client.name);
+  document.getElementById('confirm-client-name').textContent  = client.name;
+  document.getElementById('confirm-client-phone').textContent = phone;
+  document.getElementById('confirm-message-preview').textContent = finalMessage;
+
+  // Reset confirm button state
+  const confirmBtn = document.getElementById('btn-confirm-send-action');
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = '✅ إرسال الآن';
+
+  console.log('[selectDraft] client:', client.name, '| phone:', phone);
+  console.log('[selectDraft] draft:', draft.title);
+  console.log('[selectDraft] message:', finalMessage);
+
+  // Close picker → open confirmation (tiny delay for visual feedback of selection)
+  requestAnimationFrame(() => {
+    closeModal('overlay-pick-draft');
+    openModal('overlay-confirm-send');
+  });
+}
+
+// ============================================
+// NEW: confirmSend — the ONLY place WhatsApp opens
+// ============================================
+
+function confirmSend(btn) {
+  // Guard: state must be set
+  if (!selectedClientId || !selectedDraftId) {
+    showToast('❌ حدث خطأ، ابدأ من جديد');
+    closeModal('overlay-confirm-send');
+    return;
+  }
+
+  const clients = getClients();
+  const client  = clients.find(c => c.id === selectedClientId);
+  const draft   = getDrafts().find(d => d.id === selectedDraftId);
+
+  if (!client) { showToast('❌ العميل غير موجود'); closeModal('overlay-confirm-send'); return; }
+  if (!draft)  { showToast('❌ الرسالة غير موجودة'); closeModal('overlay-confirm-send'); return; }
+
+  const phone = formatPhone(client.phone);
+  if (!phone || phone.length < 10) {
+    showToast('❌ رقم الهاتف غير صالح');
+    return;
+  }
+
+  const message = (draft.message || '').replace(/\{\{name\}\}/g, client.name || '');
+  if (!message.trim()) { showToast('❌ الرسالة فارغة'); return; }
+
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-  // 1. Persist FIRST — before any navigation
+  console.log('[confirmSend] ▶ client:', client.name);
+  console.log('[confirmSend] ▶ phone:', phone);
+  console.log('[confirmSend] ▶ url:', url);
+
+  // 1. Disable button immediately — prevent double-tap
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الفتح…'; }
+
+  // 2. Persist to localStorage FIRST — before any navigation
   const updated = clients.map(c => {
-    if (c.id !== clientId) return c;
+    if (c.id !== selectedClientId) return c;
     return {
       ...c,
       reminderCountTotal: (c.reminderCountTotal || 0) + 1,
@@ -1224,22 +1461,25 @@ function sendReminder(clientId, draftId, btn) {
   });
   saveClients(updated);
 
-  // 2. Close sheet + light UI update (no heavy re-render before navigation)
-  closeModal('overlay-pick-draft');
-  showToast('✅ جارٍ فتح واتساب…');
+  // 3. Close modal
+  closeModal('overlay-confirm-send');
 
-  // 3. Flash the card (non-blocking visual)
-  const card = document.querySelector(`[data-id="${clientId}"]`);
+  // 4. Flash card (non-blocking visual — no effect on navigation)
+  const card = document.querySelector(`[data-id="${selectedClientId}"]`);
   if (card) {
     card.classList.add('sent-flash');
     setTimeout(() => card.classList.remove('sent-flash'), 600);
   }
 
-  // 4. Update stats bar only (cheap, non-blocking)
-  setTimeout(() => renderStats(), 300);
-  setTimeout(() => renderClients(), 400);
+  // 5. Clear state
+  selectedClientId = null;
+  selectedDraftId  = null;
 
-  // 5. Navigate — must be synchronous from user gesture; use href for mobile compat
+  // 6. Update UI lightly (stats bar only — no full re-render before navigation)
+  renderStats();
+  renderNotifBanner();
+
+  // 7. Navigate — synchronous, direct from user gesture, no setTimeout
   window.location.href = url;
 }
 
@@ -1329,9 +1569,8 @@ function renderClients() {
       </div>
 
       <div class="card-actions">
-        <button class="btn btn-wa"     data-action="wa"     data-id="${c.id}">📱 واتساب</button>
-        <button class="btn btn-remind" data-action="remind" data-id="${c.id}">📩 إرسال تذكير</button>
-        <button class="btn btn-edit"   data-action="detail" data-id="${c.id}">•••</button>
+        <button class="btn btn-send" data-action="send" data-id="${c.id}">📩 إرسال</button>
+        <button class="btn btn-edit" data-action="detail" data-id="${c.id}">•••</button>
       </div>
     </div>`;
   }).join('');
@@ -1468,32 +1707,14 @@ function openClientDetail(clientId) {
       <button class="btn-danger" onclick="deleteClient('${c.id}')">🗑 حذف</button>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:8px;">
-      <button class="btn btn-wa" style="flex:1;padding:12px;"
-              onclick="openWhatsApp('${c.id}', this)">📱 فتح واتساب</button>
-      <button class="btn btn-remind" style="flex:1;padding:12px;"
-              onclick="closeModal('overlay-client-detail');openPickDraft('${c.id}')">📩 إرسال تذكير</button>
+      <button class="btn btn-send" style="flex:1;padding:12px;"
+              onclick="closeModal('overlay-client-detail');openPickDraft('${c.id}')">📩 إرسال رسالة</button>
     </div>
   `;
   openModal('overlay-client-detail');
 }
 
-function openWhatsApp(clientId, btn) {
-  const c = getClients().find(c => c.id === clientId);
-  if (!c) { showToast('❌ العميل غير موجود'); return; }
-
-  const phone = formatPhone(c.phone);
-  if (!phone || phone.length < 10) {
-    showToast('❌ رقم الهاتف غير صالح');
-    return;
-  }
-
-  // Debounce double-tap
-  if (btn) { btn.disabled = true; setTimeout(() => { btn.disabled = false; }, 1500); }
-
-  console.log('[openWhatsApp] client:', c.name, '| phone:', phone);
-  const url = `https://wa.me/${phone}`;
-  window.location.href = url;
-}
+// openWhatsApp — REMOVED. All WhatsApp navigation now goes through confirmSend only.
 
 // ============================================
 // DRAFT OPERATIONS
@@ -1543,42 +1764,6 @@ function deleteDraft(draftId) {
   saveDrafts(getDrafts().filter(d => d.id !== draftId));
   showToast('🗑 تم الحذف');
   renderAll();
-}
-
-function openPickDraft(clientId) {
-  pendingClientId = clientId;
-  const drafts = getDrafts();
-  const list   = document.getElementById('draft-pick-list');
-
-  if (drafts.length === 0) {
-    list.innerHTML = `<div class="empty-state" style="padding:30px 0;">
-      <div class="empty-icon">✉️</div>
-      <div class="empty-title">لا توجد رسائل</div>
-      <div class="empty-sub">أضف رسالة أولاً من تبويب "الرسائل"</div>
-    </div>`;
-  } else {
-    const client = getClients().find(c => c.id === clientId);
-    list.innerHTML = drafts.map(d => {
-      const preview = client
-        ? (d.message || '').replace(/\{\{name\}\}/g, client.name)
-        : (d.message || '');
-      return `<div class="draft-pick-item"
-                   data-client-id="${clientId}"
-                   data-draft-id="${d.id}">
-        <div class="draft-pick-title">✉️ ${escHtml(d.title)}</div>
-        <div class="draft-pick-preview">${escHtml(preview)}</div>
-      </div>`;
-    }).join('');
-
-    // Attach listeners via JS — not inline onclick — so the button reference is available
-    list.querySelectorAll('.draft-pick-item').forEach(item => {
-      item.addEventListener('click', function() {
-        sendReminder(this.dataset.clientId, this.dataset.draftId, this);
-      });
-    });
-  }
-
-  openModal('overlay-pick-draft');
 }
 
 // ============================================
@@ -1771,16 +1956,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Delegated touch/click handler for client card buttons — works on all mobile browsers
   document.getElementById('clients-list').addEventListener('click', function(e) {
     const btn = e.target.closest('[data-action]');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     const action   = btn.dataset.action;
     const clientId = btn.dataset.id;
-    if (btn.disabled) return;
 
-    if (action === 'wa') {
-      btn.disabled = true;
-      setTimeout(() => { btn.disabled = false; }, 1500);
-      openWhatsApp(clientId, btn);
-    } else if (action === 'remind') {
+    // btn-wa REMOVED — no direct WA action on card
+    if (action === 'send') {
       openPickDraft(clientId);
     } else if (action === 'detail') {
       openClientDetail(clientId);

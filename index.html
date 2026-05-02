@@ -1,1983 +1,1828 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>متابعة العملاء</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  /* ============================================
-     CSS VARIABLES & RESET
-  ============================================ */
-  :root {
-    --bg: #0f0f13;
-    --surface: #18181f;
-    --surface2: #21212b;
-    --surface3: #2a2a38;
-    --border: #2e2e3e;
-    --accent: #6c63ff;
-    --accent-glow: rgba(108, 99, 255, 0.3);
-    --accent2: #25d366;
-    --accent2-glow: rgba(37, 211, 102, 0.25);
-    --danger: #ff5f6d;
-    --warn: #ffb347;
-    --text: #eeeef5;
-    --text2: #9595ab;
-    --text3: #5a5a72;
-    --card-needs: rgba(108, 99, 255, 0.08);
-    --card-needs-border: rgba(108, 99, 255, 0.5);
-    --radius: 18px;
-    --radius-sm: 12px;
-    --radius-xs: 8px;
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
-    --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
-    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --font: 'IBM Plex Sans Arabic', sans-serif;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 16px; }
-
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ============================================
-     APP SHELL
-  ============================================ */
-  #app {
-    max-width: 520px;
-    margin: 0 auto;
-    min-height: 100vh;
-    position: relative;
-    padding-bottom: 100px;
-  }
-
-  /* ============================================
-     HEADER
-  ============================================ */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(15,15,19,0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .header-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo-icon {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, var(--accent), #a78bfa);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
-
-  .header-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  .header-sub {
-    font-size: 0.72rem;
-    color: var(--text2);
-    margin-top: 1px;
-  }
-
-  .header-actions { display: flex; gap: 8px; }
-
-  .icon-btn {
-    width: 38px;
-    height: 38px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    color: var(--text2);
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-    -webkit-appearance: none;
-  }
-  .icon-btn:active { transform: scale(0.92); background: var(--surface3); }
-  .icon-btn:hover { color: var(--text); border-color: var(--accent); }
-
-  /* ============================================
-     STATS BAR
-  ============================================ */
-  .stats-bar {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    padding: 16px 20px;
-    animation: fadeInDown 0.4s ease both;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px 10px;
-    text-align: center;
-  }
-
-  .stat-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .stat-value.accent { color: var(--accent); }
-  .stat-value.warn { color: var(--warn); }
-  .stat-value.green { color: var(--accent2); }
-
-  .stat-label {
-    font-size: 0.68rem;
-    color: var(--text3);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  /* ============================================
-     TABS
-  ============================================ */
-  .tabs {
-    display: flex;
-    gap: 6px;
-    padding: 0 20px 14px;
-    animation: fadeInDown 0.4s 0.05s ease both;
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 9px 10px;
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text2);
-    font-family: var(--font);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    -webkit-appearance: none;
-  }
-
-  .tab-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 0 18px var(--accent-glow);
-  }
-
-  .tab-btn:active { transform: scale(0.96); }
-
-  /* ============================================
-     SEARCH BAR
-  ============================================ */
-  .search-wrap {
-    padding: 0 20px 14px;
-    animation: fadeInDown 0.4s 0.1s ease both;
-  }
-
-  .search-input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 0.9rem;
-    padding: 10px 14px 10px 40px;
-    outline: none;
-    transition: var(--transition);
-    direction: rtl;
-  }
-
-  .search-wrap { position: relative; }
-  .search-icon {
-    position: absolute;
-    left: 34px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text3);
-    pointer-events: none;
-    font-size: 15px;
-  }
-
-  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-
-  /* ============================================
-     CLIENT CARDS
-  ============================================ */
-  .clients-list {
-    padding: 0 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .client-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    cursor: pointer;
-    transition: var(--transition);
-    animation: fadeInUp 0.35s ease both;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .client-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: var(--radius);
-    background: transparent;
-    transition: var(--transition);
-  }
-
-  .client-card.needs-followup {
-    background: var(--card-needs);
-    border-color: var(--card-needs-border);
-    box-shadow: 0 0 24px rgba(108,99,255,0.12), inset 0 0 0 1px rgba(108,99,255,0.15);
-  }
-
-  .client-card.needs-followup::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), #a78bfa);
-    border-radius: var(--radius) var(--radius) 0 0;
-    animation: pulseBar 2s ease-in-out infinite;
-  }
-
-  .client-card:active { transform: scale(0.98); }
-
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-
-  .card-left { display: flex; align-items: center; gap: 12px; }
-
-  .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--surface3), var(--surface2));
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--accent);
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .avatar-text { position: relative; z-index: 1; }
-
-  .client-name {
-    font-size: 0.98rem;
-    font-weight: 700;
-    margin-bottom: 3px;
-    color: var(--text);
-  }
-
-  .client-phone {
-    font-size: 0.76rem;
-    color: var(--text3);
-    direction: ltr;
-    unicode-bidi: plaintext;
-  }
-
-  .badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 3px 9px;
-    border-radius: 20px;
-    letter-spacing: 0.03em;
-    white-space: nowrap;
-  }
-
-  .badge-needs {
-    background: rgba(108,99,255,0.2);
-    color: #a78bfa;
-    border: 1px solid rgba(108,99,255,0.4);
-    animation: badgePulse 2s ease-in-out infinite;
-  }
-
-  .badge-ok {
-    background: rgba(37,211,102,0.15);
-    color: var(--accent2);
-    border: 1px solid rgba(37,211,102,0.3);
-  }
-
-  .card-stats {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-
-  .card-stat {
-    flex: 1;
-    background: var(--surface2);
-    border-radius: var(--radius-xs);
-    padding: 8px 10px;
-    text-align: center;
-    border: 1px solid var(--border);
-  }
-
-  .card-stat-val {
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 3px;
-  }
-
-  .card-stat-lbl {
-    font-size: 0.6rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .today-val { color: var(--accent); }
-  .total-val { color: var(--text2); }
-  .time-val { color: var(--text3); font-size: 0.7rem !important; }
-
-  .card-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .btn {
-    -webkit-appearance: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: var(--transition);
-    white-space: nowrap;
-  }
-
-  .btn:active { transform: scale(0.94); }
-
-  /* btn-wa REMOVED — single send flow only */
-
-  /* RENAMED + UPDATED: btn-send replaces btn-remind, takes full width */
-  .btn-send {
-    flex: 1;
-    background: linear-gradient(135deg, var(--accent), #8b7cf8);
-    color: #fff;
-    border-radius: var(--radius-xs);
-    font-size: 0.88rem;
-    font-weight: 700;
-    padding: 11px 14px;
-    box-shadow: 0 4px 18px var(--accent-glow);
-    letter-spacing: 0.01em;
-  }
-
-  .btn-send:hover { background: linear-gradient(135deg, #7c73ff, #9d8fff); box-shadow: 0 6px 22px var(--accent-glow); }
-  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  .btn-edit {
-    width: 36px;
-    height: 36px;
-    background: var(--surface2);
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-xs);
-    color: var(--text2);
-    font-size: 14px;
-    padding: 0;
-    border: none;
-  }
-
-  .btn-edit:hover { color: var(--text); background: var(--surface3); }
-
-  /* ============================================
-     EMPTY STATE
-  ============================================ */
-  .empty-state {
-    text-align: center;
-    padding: 60px 30px;
-    animation: fadeIn 0.4s ease;
-  }
-
-  .empty-icon {
-    font-size: 3.5rem;
-    margin-bottom: 16px;
-    opacity: 0.5;
-  }
-
-  .empty-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text2);
-    margin-bottom: 8px;
-  }
-
-  .empty-sub {
-    font-size: 0.85rem;
-    color: var(--text3);
-    line-height: 1.6;
-  }
-
-  /* ============================================
-     DRAFTS VIEW
-  ============================================ */
-  .drafts-list {
-    padding: 0 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .draft-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    animation: fadeInUp 0.35s ease both;
-  }
-
-  .draft-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .draft-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .draft-actions { display: flex; gap: 6px; }
-
-  .btn-sm {
-    -webkit-appearance: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font);
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 6px;
-    transition: var(--transition);
-  }
-
-  .btn-sm:active { transform: scale(0.94); }
-  .btn-sm-edit { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-  .btn-sm-delete { background: rgba(255,95,109,0.15); color: var(--danger); border: 1px solid rgba(255,95,109,0.3); }
-
-  .draft-body {
-    font-size: 0.82rem;
-    color: var(--text2);
-    line-height: 1.6;
-    background: var(--surface2);
-    border-radius: var(--radius-xs);
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  /* ============================================
-     BOTTOM BAR
-  ============================================ */
-  .bottom-bar {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 520px;
-    background: rgba(15,15,19,0.9);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid var(--border);
-    padding: 12px 20px;
-    display: flex;
-    gap: 10px;
-    z-index: 200;
-  }
-
-  .btn-bar {
-    -webkit-appearance: none;
-    flex: 1;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-family: var(--font);
-    font-size: 0.88rem;
-    font-weight: 700;
-    padding: 13px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: var(--transition);
-  }
-
-  .btn-bar:active { transform: scale(0.96); }
-
-  .btn-bar-primary {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 18px var(--accent-glow);
-  }
-
-  .btn-bar-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-
-  /* ============================================
-     MODALS & OVERLAYS
-  ============================================ */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 300;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  .overlay.open {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .overlay.center {
-    align-items: center;
-    padding: 20px;
-  }
-
-  .sheet {
-    width: 100%;
-    max-width: 520px;
-    background: var(--surface);
-    border-radius: var(--radius) var(--radius) 0 0;
-    padding: 8px 20px 32px;
-    transform: translateY(100%);
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .overlay.open .sheet { transform: translateY(0); }
-
-  .modal {
-    width: 100%;
-    max-width: 480px;
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 24px 20px;
-    transform: scale(0.9) translateY(20px);
-    opacity: 0;
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
-  }
-
-  .overlay.open .modal {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
-
-  .sheet-handle {
-    width: 40px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 10px auto 20px;
-  }
-
-  .sheet-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 18px;
-    color: var(--text);
-  }
-
-  .modal-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: var(--text);
-  }
-
-  /* ============================================
-     FORM ELEMENTS
-  ============================================ */
-  .field {
-    margin-bottom: 14px;
-  }
-
-  label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text2);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  input[type="text"],
-  input[type="tel"],
-  textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 0.9rem;
-    padding: 11px 14px;
-    outline: none;
-    transition: var(--transition);
-    -webkit-appearance: none;
-    direction: rtl;
-  }
-
-  input[type="tel"] {
-    direction: ltr;
-    unicode-bidi: plaintext;
-    text-align: right;
-  }
-
-  input:focus, textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-
-  textarea { resize: vertical; min-height: 100px; }
-
-  .form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .btn-full {
-    -webkit-appearance: none;
-    flex: 1;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-family: var(--font);
-    font-size: 0.9rem;
-    font-weight: 700;
-    padding: 13px;
-    transition: var(--transition);
-  }
-
-  .btn-full:active { transform: scale(0.97); }
-  .btn-save { background: var(--accent); color: #fff; box-shadow: 0 4px 14px var(--accent-glow); }
-  .btn-cancel { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-
-  /* ============================================
-     DRAFT PICKER SHEET
-  ============================================ */
-  .draft-pick-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: var(--transition);
-  }
-
-  .draft-pick-item:active { transform: scale(0.98); }
-
-  .draft-pick-item:hover {
-    border-color: var(--accent);
-    background: rgba(108,99,255,0.08);
-  }
-
-  .draft-pick-title {
-    font-size: 0.92rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-    color: var(--text);
-  }
-
-  .draft-pick-preview {
-    font-size: 0.77rem;
-    color: var(--text3);
-    line-height: 1.5;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-
-  /* ============================================
-     SUCCESS ANIMATION
-  ============================================ */
-  .success-toast {
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: linear-gradient(135deg, #1a3a2a, #1e4433);
-    color: var(--accent2);
-    border: 1px solid rgba(37,211,102,0.4);
-    border-radius: var(--radius-sm);
-    padding: 12px 22px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    z-index: 999;
-    opacity: 0;
-    transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    white-space: nowrap;
-    box-shadow: 0 8px 30px rgba(37,211,102,0.2);
-    pointer-events: none;
-  }
-
-  .success-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* ============================================
-     CLIENT DETAIL MODAL SPECIFIC
-  ============================================ */
-  .detail-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, var(--accent), #a78bfa);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 auto 14px;
-    box-shadow: 0 0 28px var(--accent-glow);
-  }
-
-  .detail-name {
-    text-align: center;
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .detail-phone {
-    text-align: center;
-    font-size: 0.82rem;
-    color: var(--text3);
-    direction: ltr;
-    margin-bottom: 20px;
-  }
-
-  .detail-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .btn-danger {
-    -webkit-appearance: none;
-    flex: 1;
-    border: none;
-    background: rgba(255,95,109,0.15);
-    color: var(--danger);
-    border: 1px solid rgba(255,95,109,0.3);
-    border-radius: var(--radius-sm);
-    padding: 10px;
-    font-family: var(--font);
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transition);
-  }
-  .btn-danger:active { transform: scale(0.96); }
-
-  .last-reminder-info {
-    text-align: center;
-    font-size: 0.78rem;
-    color: var(--text3);
-    padding: 12px;
-    background: var(--surface2);
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--border);
-  }
-
-  /* ============================================
-     NOTIFICATION BANNER
-  ============================================ */
-  .notif-banner {
-    margin: 0 20px 12px;
-    background: rgba(255,179,71,0.1);
-    border: 1px solid rgba(255,179,71,0.3);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    animation: fadeInDown 0.4s ease;
-  }
-
-  .notif-icon { font-size: 1.2rem; }
-  .notif-text { font-size: 0.8rem; color: var(--warn); font-weight: 600; line-height: 1.4; }
-
-  /* ============================================
-     ANIMATIONS
-  ============================================ */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes pulseBar {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
-  @keyframes badgePulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.3); }
-    50% { box-shadow: 0 0 0 4px rgba(108,99,255,0); }
-  }
-
-  @keyframes successPop {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  .card-anim-delay-1 { animation-delay: 0.05s; }
-  .card-anim-delay-2 { animation-delay: 0.1s; }
-  .card-anim-delay-3 { animation-delay: 0.15s; }
-  .card-anim-delay-4 { animation-delay: 0.2s; }
-  .card-anim-delay-5 { animation-delay: 0.25s; }
-
-  /* ============================================
-     SCROLLBAR
-  ============================================ */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  /* ============================================
-     SEND SUCCESS RIPPLE ON CARD
-  ============================================ */
-  .sent-flash {
-    animation: sentFlash 0.5s ease;
-  }
-
-  @keyframes sentFlash {
-    0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.4); }
-    50% { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
-    100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
-  }
-
-  /* ============================================
-     CONFIRMATION MODAL — NEW
-  ============================================ */
-  .confirm-client-block {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .confirm-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), #a78bfa);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-  }
-
-  .confirm-client-name {
-    font-size: 0.98rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 2px;
-  }
-
-  .confirm-client-phone {
-    font-size: 0.75rem;
-    color: var(--text3);
-    direction: ltr;
-    unicode-bidi: plaintext;
-  }
-
-  .confirm-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 6px;
-  }
-
-  .confirm-message-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
-    padding: 12px 14px;
-    font-size: 0.85rem;
-    color: var(--text2);
-    line-height: 1.65;
-    white-space: pre-wrap;
-    word-break: break-word;
-    max-height: 140px;
-    overflow-y: auto;
-    margin-bottom: 18px;
-  }
-
-  .btn-confirm-send {
-    -webkit-appearance: none;
-    flex: 2;
-    border: none;
-    background: linear-gradient(135deg, var(--accent2), #1eb85a);
-    color: #fff;
-    border-radius: var(--radius-sm);
-    font-family: var(--font);
-    font-size: 0.95rem;
-    font-weight: 700;
-    padding: 14px;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 4px 18px rgba(37,211,102,0.35);
-    letter-spacing: 0.01em;
-  }
-
-  .btn-confirm-send:active { transform: scale(0.96); }
-  .btn-confirm-send:hover  { background: linear-gradient(135deg, #20c05c, #17a34a); }
-  .btn-confirm-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  /* Draft picker item — UPDATED: shows selection state, no direct send */
-  .draft-pick-item.selected {
-    border-color: var(--accent);
-    background: rgba(108,99,255,0.12);
-    box-shadow: 0 0 0 2px rgba(108,99,255,0.25);
-  }
-
-  .draft-pick-item .pick-check {
-    display: none;
-    color: var(--accent);
-    font-size: 1rem;
-    margin-right: auto;
-    flex-shrink: 0;
-  }
-
-  .draft-pick-item.selected .pick-check { display: block; }
-
-  /* RTL tweaks */
-  .search-input { padding: 10px 40px 10px 14px; }
-  .search-icon { right: 34px; left: auto; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>FollowUp — Client Messaging</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+/* =========================================
+   FollowUp — Client Messaging App
+   Design: Refined Utility / Dark Olive & Warm Cream
+   ========================================= */
+
+/* --- RESET & BASE --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --bg:         #0f0f0d;
+  --surface:    #1a1a16;
+  --surface-2:  #242420;
+  --surface-3:  #2e2e28;
+  --border:     #333330;
+  --border-2:   #3e3e38;
+
+  --text-1:     #f0ead8;
+  --text-2:     #a09880;
+  --text-3:     #6a6458;
+
+  --accent:     #c8f060;
+  --accent-dim: #8fb040;
+  --accent-bg:  rgba(200,240,96,.08);
+
+  --whatsapp:   #25d366;
+  --whatsapp-dark: #128c4a;
+
+  --danger:     #ff5f5f;
+  --danger-bg:  rgba(255,95,95,.1);
+
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
+  --shadow-md: 0 8px 32px rgba(0,0,0,.5);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,.6);
+
+  --header-h:  60px;
+  --stats-h:   64px;
+  --search-h:  52px;
+}
+
+html {
+  height: 100%;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* --- UTILITY --- */
+.hidden { display: none !important; }
+
+/* =========================================
+   HEADER
+   ========================================= */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  height: var(--header-h);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-mark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -.3px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #0f0f0d;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
+  white-space: nowrap;
+}
+
+.btn-icon:active { transform: scale(.96); }
+.btn-icon:hover  { background: #d4f570; }
+
+.btn-icon-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color .12s ease, background .12s ease;
+}
+
+.btn-icon-only:hover {
+  color: var(--text-1);
+  background: var(--surface-3);
+}
+
+/* =========================================
+   STATS BAR
+   ========================================= */
+#stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: var(--stats-h);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  max-width: 100%;
+  width: 100%;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+}
+
+.stat-num {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+  transition: color .2s;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+
+/* =========================================
+   SEARCH
+   ========================================= */
+#search-wrap {
+  position: relative;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-icon {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+#search-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s ease;
+}
+
+#search-input::placeholder { color: var(--text-3); }
+#search-input:focus { border-color: var(--border-2); }
+
+/* =========================================
+   CLIENT LIST
+   ========================================= */
+#client-list-wrap {
+  padding: 12px 16px 100px;
+}
+
+#client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- CLIENT CARD --- */
+.client-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color .15s ease, transform .1s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.client-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.client-card:hover {
+  border-color: var(--border-2);
+}
+
+.client-card:hover::before {
+  opacity: 1;
+}
+
+.client-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1.5px solid var(--border-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.client-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-phone {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 300;
+  margin-bottom: 4px;
+}
+
+.client-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid rgba(200,240,96,.2);
+  letter-spacing: .3px;
+}
+
+.client-last {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.client-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--whatsapp);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
+  box-shadow: 0 3px 10px rgba(37,211,102,.3);
+}
+
+.btn-send:hover  { background: #20c05e; }
+.btn-send:active { transform: scale(.92); }
+
+.btn-edit-client {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+
+.btn-edit-client:hover {
+  color: var(--text-1);
+  border-color: var(--border-2);
+}
+
+/* =========================================
+   EMPTY STATE
+   ========================================= */
+#empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: .6;
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 6px;
+}
+
+.empty-sub {
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+/* =========================================
+   MODALS
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,.7);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeInOverlay .2s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+  animation: none;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 640px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-2);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp .25s cubic-bezier(.25,.46,.45,.94);
+  overscroll-behavior: contain;
+}
+
+.modal-sheet--tall {
+  max-height: 85vh;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  margin: 12px auto 6px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-2);
+  font-size: 18px;
+  cursor: pointer;
+  transition: color .12s, background .12s;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--text-1);
+  background: var(--surface-3);
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px 8px;
+  border-top: 1px solid var(--border);
+}
+
+.modal-footer > * { flex: 1; }
+
+/* =========================================
+   FORM FIELDS
+   ========================================= */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.field-group input,
+.field-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s;
+  resize: vertical;
+}
+
+.field-group input::placeholder,
+.field-group textarea::placeholder {
+  color: var(--text-3);
+}
+
+.field-group input:focus,
+.field-group textarea:focus {
+  border-color: var(--accent-dim);
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.field-hint code {
+  background: var(--surface-3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* =========================================
+   BUTTONS
+   ========================================= */
+.btn-primary {
+  padding: 13px 20px;
+  background: var(--accent);
+  color: #0f0f0d;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: transform .12s, background .12s;
+}
+.btn-primary:hover  { background: #d4f570; }
+.btn-primary:active { transform: scale(.97); }
+
+.btn-secondary {
+  padding: 13px 20px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: color .12s, background .12s;
+}
+.btn-secondary:hover {
+  color: var(--text-1);
+  background: var(--surface-3);
+}
+
+.btn-danger {
+  padding: 13px 20px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(255,95,95,.2);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background .12s;
+}
+.btn-danger:hover { background: rgba(255,95,95,.18); }
+
+.btn-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--whatsapp);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: transform .1s, background .12s;
+  box-shadow: 0 4px 16px rgba(37,211,102,.3);
+}
+.btn-whatsapp:hover  { background: #20c05e; }
+.btn-whatsapp:active { transform: scale(.97); }
+
+.btn-outline-full {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px dashed rgba(200,240,96,.3);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.btn-outline-full:hover {
+  background: var(--accent-bg);
+  border-color: rgba(200,240,96,.5);
+}
+
+/* =========================================
+   DRAFT PICKER
+   ========================================= */
+#draft-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.draft-pick-item {
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.draft-pick-item:hover {
+  border-color: var(--accent-dim);
+  background: var(--accent-bg);
+}
+
+.draft-pick-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+
+.draft-pick-preview {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-inline {
+  text-align: center;
+  padding: 32px 0;
+}
+.empty-inline p {
+  color: var(--text-3);
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+/* =========================================
+   CONFIRM MODAL
+   ========================================= */
+.confirm-meta {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.confirm-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.confirm-row:last-child { border-bottom: none; }
+
+.confirm-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.confirm-value {
+  font-size: 14px;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.confirm-preview-wrap { margin-top: -4px; }
+
+.confirm-preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+}
+
+.confirm-preview-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text-1);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* =========================================
+   DRAFT MANAGE LIST
+   ========================================= */
+#draft-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.draft-manage-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.draft-manage-item:hover { border-color: var(--border-2); }
+
+.draft-manage-info { flex: 1; min-width: 0; }
+
+.draft-manage-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 3px;
+}
+
+.draft-manage-preview {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-manage-edit {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color .12s;
+}
+.draft-manage-edit:hover { color: var(--text-1); }
+
+/* =========================================
+   TOAST
+   ========================================= */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: #2a2a24;
+  border: 1px solid var(--border-2);
+  box-shadow: var(--shadow-md);
+  animation: toastIn .2s ease;
+  white-space: nowrap;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+}
+
+.toast--error {
+  background: #2a1616;
+  border-color: rgba(255,95,95,.3);
+  color: var(--danger);
+}
+
+.toast--success {
+  background: #162216;
+  border-color: rgba(37,211,102,.3);
+  color: var(--whatsapp);
+}
+
+.toast--info {
+  background: #1e1e18;
+  border-color: var(--border-2);
+  color: var(--text-2);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   SCROLLBAR STYLING
+   ========================================= */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 400px) {
+  .client-name { font-size: 14px; }
+  .btn-icon span { display: none; }
+  .btn-icon { padding: 8px 10px; }
+}
+
+@media (min-width: 641px) {
+  #client-list-wrap { max-width: 640px; margin: 0 auto; }
+  #stats-bar        { max-width: 640px; margin: 0 auto; }
+  #search-wrap      { max-width: 640px; margin: 0 auto; padding-left: calc(50% - 304px); padding-right: calc(50% - 304px); }
+  .header-inner     { max-width: 640px; }
+}
+  </style>
 </head>
 <body>
 
-<div id="app">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-logo">
-      <div class="logo-icon">📋</div>
-      <div>
-        <div class="header-title">متابعة العملاء</div>
-        <div class="header-sub" id="today-date">—</div>
-      </div>
-    </div>
-    <div class="header-actions">
-      <button class="icon-btn" onclick="requestNotifPermission()" title="تفعيل الإشعارات">🔔</button>
-      <button class="icon-btn" onclick="openSettingsModal()" title="الإعدادات">⚙️</button>
-    </div>
-  </div>
+  <!-- ===== APP SHELL ===== -->
+  <div id="app">
 
-  <!-- Stats -->
-  <div class="stats-bar" id="stats-bar">
-    <div class="stat-card">
-      <div class="stat-value accent" id="stat-total">0</div>
-      <div class="stat-label">إجمالي العملاء</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value warn" id="stat-needs">0</div>
-      <div class="stat-label">تحتاج متابعة</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value green" id="stat-sent">0</div>
-      <div class="stat-label">أُرسل اليوم</div>
-    </div>
-  </div>
-
-  <!-- Notification Banner -->
-  <div id="notif-banner" class="notif-banner" style="display:none;">
-    <span class="notif-icon">⚠️</span>
-    <span class="notif-text" id="notif-text"></span>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('clients', this)">العملاء</button>
-    <button class="tab-btn" onclick="switchTab('drafts', this)">الرسائل</button>
-  </div>
-
-  <!-- Search -->
-  <div class="search-wrap" id="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input type="text" class="search-input" id="search-input" placeholder="ابحث عن عميل..." oninput="renderClients()">
-  </div>
-
-  <!-- Content -->
-  <div id="content-clients">
-    <div class="clients-list" id="clients-list"></div>
-  </div>
-
-  <div id="content-drafts" style="display:none;">
-    <div class="drafts-list" id="drafts-list"></div>
-  </div>
-
-  <!-- Bottom Bar -->
-  <div class="bottom-bar">
-    <button class="btn-bar btn-bar-secondary" onclick="openAddDraftModal()">➕ رسالة جديدة</button>
-    <button class="btn-bar btn-bar-primary" onclick="openAddClientModal()">👤 إضافة عميل</button>
-  </div>
-</div>
-
-<!-- ======== OVERLAYS ======== -->
-
-<!-- Add/Edit Client Sheet -->
-<div class="overlay" id="overlay-client" onclick="closeOnOverlay(event, 'overlay-client')">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="client-form-title">إضافة عميل جديد</div>
-    <input type="hidden" id="client-id">
-    <div class="field">
-      <label>الاسم *</label>
-      <input type="text" id="client-name" placeholder="اسم العميل">
-    </div>
-    <div class="field">
-      <label>رقم الواتساب *</label>
-      <input type="tel" id="client-phone" placeholder="مثال: 201234567890">
-    </div>
-    <div class="form-actions">
-      <button class="btn-full btn-cancel" onclick="closeModal('overlay-client')">إلغاء</button>
-      <button class="btn-full btn-save" onclick="saveClient()">💾 حفظ</button>
-    </div>
-  </div>
-</div>
-
-<!-- Draft Pick Sheet — UPDATED: select only, no direct send -->
-<div class="overlay" id="overlay-pick-draft" onclick="closeOnOverlay(event, 'overlay-pick-draft')">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">اختر رسالة</div>
-    <div id="draft-pick-list"></div>
-    <div style="margin-top:10px;">
-      <button class="btn-full btn-cancel" onclick="closeModal('overlay-pick-draft')">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Confirmation Modal — NEW -->
-<div class="overlay center" id="overlay-confirm-send" onclick="closeOnOverlay(event, 'overlay-confirm-send')">
-  <div class="modal">
-    <div class="modal-title">📤 تأكيد الإرسال</div>
-
-    <!-- Client info -->
-    <div class="confirm-client-block">
-      <div class="confirm-avatar" id="confirm-avatar">—</div>
-      <div>
-        <div class="confirm-client-name" id="confirm-client-name">—</div>
-        <div class="confirm-client-phone" id="confirm-client-phone" dir="ltr">—</div>
-      </div>
-    </div>
-
-    <!-- Message preview -->
-    <div class="confirm-label">الرسالة</div>
-    <div class="confirm-message-box" id="confirm-message-preview"></div>
-
-    <!-- Actions -->
-    <div class="form-actions" style="gap:10px;">
-      <button class="btn-full btn-cancel" style="flex:1;" onclick="closeModal('overlay-confirm-send')">❌ إلغاء</button>
-      <button class="btn-confirm-send" id="btn-confirm-send-action" onclick="confirmSend(this)">
-        ✅ إرسال الآن
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Add/Edit Draft Modal -->
-<div class="overlay center" id="overlay-draft" onclick="closeOnOverlay(event, 'overlay-draft')">
-  <div class="modal">
-    <div class="modal-title" id="draft-form-title">رسالة جديدة</div>
-    <input type="hidden" id="draft-id">
-    <div class="field">
-      <label>عنوان الرسالة *</label>
-      <input type="text" id="draft-title" placeholder="مثال: تذكير شهري">
-    </div>
-    <div class="field">
-      <label>نص الرسالة *</label>
-      <textarea id="draft-message" placeholder="مرحباً {{name}}، هذا تذكير..."></textarea>
-    </div>
-    <div style="font-size:0.72rem;color:var(--text3);margin-bottom:12px;">💡 استخدم {{name}} لإدراج اسم العميل تلقائياً</div>
-    <div class="form-actions">
-      <button class="btn-full btn-cancel" onclick="closeModal('overlay-draft')">إلغاء</button>
-      <button class="btn-full btn-save" onclick="saveDraft()">💾 حفظ</button>
-    </div>
-  </div>
-</div>
-
-<!-- Client Detail Sheet -->
-<div class="overlay" id="overlay-client-detail" onclick="closeOnOverlay(event, 'overlay-client-detail')">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div id="client-detail-content"></div>
-  </div>
-</div>
-
-<!-- Settings Modal -->
-<div class="overlay center" id="overlay-settings" onclick="closeOnOverlay(event, 'overlay-settings')">
-  <div class="modal">
-    <div class="modal-title">⚙️ الإعدادات</div>
-    <div class="field">
-      <label>وقت الإعادة اليومية</label>
-      <input type="text" id="reset-time-input" placeholder="06:00">
-    </div>
-    <div style="font-size:0.75rem;color:var(--text3);margin-bottom:16px;">يُعاد تعيين عدد المتابعات اليومية عند هذا الوقت</div>
-    <div class="form-actions">
-      <button class="btn-full btn-cancel" onclick="closeModal('overlay-settings')">إغلاق</button>
-      <button class="btn-full btn-save" onclick="saveSettings()">حفظ</button>
-    </div>
-  </div>
-</div>
-
-<!-- Success Toast -->
-<div class="success-toast" id="success-toast">✅ تم الإرسال بنجاح!</div>
-
-<script>
-// ============================================
-// LOCAL STORAGE HELPERS
-// ============================================
-
-function getClients() {
-  try { return JSON.parse(localStorage.getItem('fu_clients') || '[]'); }
-  catch { return []; }
-}
-
-function saveClients(clients) {
-  localStorage.setItem('fu_clients', JSON.stringify(clients));
-}
-
-function getDrafts() {
-  try { return JSON.parse(localStorage.getItem('fu_drafts') || '[]'); }
-  catch { return []; }
-}
-
-function saveDrafts(drafts) {
-  localStorage.setItem('fu_drafts', JSON.stringify(drafts));
-}
-
-function getAppState() {
-  try { return JSON.parse(localStorage.getItem('fu_state') || '{}'); }
-  catch { return {}; }
-}
-
-function saveAppState(state) {
-  localStorage.setItem('fu_state', JSON.stringify(state));
-}
-
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-// ============================================
-// DAILY RESET LOGIC
-// ============================================
-
-function getResetHour() {
-  const state = getAppState();
-  const t = state.dailyResetTime || '06:00';
-  return parseInt(t.split(':')[0]) || 6;
-}
-
-function getEffectiveDate(now) {
-  const h = now.getHours();
-  const resetHour = getResetHour();
-  if (h < resetHour) {
-    const prev = new Date(now);
-    prev.setDate(prev.getDate() - 1);
-    return prev.toISOString().slice(0, 10);
-  }
-  return now.toISOString().slice(0, 10);
-}
-
-function handleDailyReset() {
-  const now = new Date();
-  const effectiveDate = getEffectiveDate(now);
-  const state = getAppState();
-
-  if (state.lastAppOpenDate !== effectiveDate) {
-    const clients = getClients().map(c => ({ ...c, reminderCountToday: 0 }));
-    saveClients(clients);
-    state.lastAppOpenDate = effectiveDate;
-    saveAppState(state);
-  }
-}
-
-// ============================================
-// CLIENT STATUS EVALUATION
-// ============================================
-
-function evaluateClientStatus(client) {
-  if (client.reminderCountToday === 0) return 'needs';
-  if (client.lastReminderDate) {
-    const diff = Date.now() - client.lastReminderDate;
-    if (diff > 24 * 60 * 60 * 1000) return 'needs';
-  }
-  return 'ok';
-}
-
-// ============================================
-// SEND FLOW STATE — NEW
-// ============================================
-
-let selectedClientId = null;   // set when user taps "إرسال" on a card
-let selectedDraftId  = null;   // set when user picks a draft
-
-// sendReminder — REMOVED (replaced by selectDraft → confirmSend flow)
-// openWhatsApp — REMOVED (no direct WA open from card)
-
-// ============================================
-// UPDATED: openPickDraft — select only, no send
-// ============================================
-
-function openPickDraft(clientId) {
-  selectedClientId = clientId;
-  selectedDraftId  = null;       // reset any previous selection
-
-  const drafts = getDrafts();
-  const list   = document.getElementById('draft-pick-list');
-
-  if (drafts.length === 0) {
-    list.innerHTML = `<div class="empty-state" style="padding:30px 0;">
-      <div class="empty-icon">✉️</div>
-      <div class="empty-title">لا توجد رسائل</div>
-      <div class="empty-sub">أضف رسالة أولاً من تبويب "الرسائل"</div>
-    </div>`;
-  } else {
-    const client = getClients().find(c => c.id === clientId);
-    list.innerHTML = drafts.map(d => {
-      const preview = client
-        ? (d.message || '').replace(/\{\{name\}\}/g, client.name)
-        : (d.message || '');
-      return `<div class="draft-pick-item"
-                   data-client-id="${clientId}"
-                   data-draft-id="${d.id}">
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="flex:1;">
-            <div class="draft-pick-title">✉️ ${escHtml(d.title)}</div>
-            <div class="draft-pick-preview">${escHtml(preview)}</div>
-          </div>
-          <span class="pick-check">✔</span>
+    <!-- TOP NAV -->
+    <header id="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-mark">↗</span>
+          <span class="logo-text">FollowUp</span>
         </div>
-      </div>`;
-    }).join('');
+        <div class="header-actions">
+          <button id="btn-add-client" class="btn-icon" aria-label="Add client">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add Client</span>
+          </button>
+          <button id="btn-manage-drafts" class="btn-icon-only" aria-label="Manage drafts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
 
-    // Attach listeners — each tap calls selectDraft, NOT sendReminder
-    list.querySelectorAll('.draft-pick-item').forEach(item => {
-      item.addEventListener('click', function() {
-        selectDraft(this.dataset.clientId, this.dataset.draftId);
-      });
+    <!-- STATS BAR -->
+    <div id="stats-bar">
+      <div class="stat-item">
+        <span class="stat-num" id="stat-clients">0</span>
+        <span class="stat-label">Clients</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-sent-today">0</span>
+        <span class="stat-label">Sent Today</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-drafts">0</span>
+        <span class="stat-label">Templates</span>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search clients…" autocomplete="off" />
+    </div>
+
+    <!-- CLIENT LIST -->
+    <main id="client-list-wrap">
+      <div id="client-list"></div>
+      <div id="empty-state" class="hidden">
+        <div class="empty-icon">👥</div>
+        <p class="empty-title">No clients yet</p>
+        <p class="empty-sub">Tap "+ Add Client" to get started</p>
+      </div>
+    </main>
+
+  </div><!-- /#app -->
+
+
+  <!-- ===== MODAL: ADD / EDIT CLIENT ===== -->
+  <div id="modal-client" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-client-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-client-title">New Client</h2>
+        <button class="modal-close" data-close="modal-client" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label for="input-client-name">Full Name</label>
+          <input type="text" id="input-client-name" placeholder="e.g. Sarah Johnson" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label for="input-client-phone">WhatsApp Number</label>
+          <input type="tel" id="input-client-phone" placeholder="e.g. +201012345678" autocomplete="off" />
+          <span class="field-hint">Include country code (e.g. +20 for Egypt)</span>
+        </div>
+        <input type="hidden" id="input-client-id" />
+      </div>
+      <div class="modal-footer">
+        <button id="btn-delete-client" class="btn-danger hidden">Delete</button>
+        <button id="btn-save-client" class="btn-primary">Save Client</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: DRAFT PICKER ===== -->
+  <div id="modal-drafts" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-drafts-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-drafts-title">Choose Template</h2>
+        <button class="modal-close" data-close="modal-drafts" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="draft-picker-list"></div>
+        <div id="draft-picker-empty" class="empty-inline hidden">
+          <p>No templates yet. Create one first.</p>
+          <button id="btn-goto-drafts-from-picker" class="btn-secondary">Manage Templates</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: CONFIRM SEND ===== -->
+  <div id="modal-confirm" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-confirm-title">Confirm &amp; Send</h2>
+        <button class="modal-close" data-close="modal-confirm" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-meta">
+          <div class="confirm-row">
+            <span class="confirm-label">To</span>
+            <span id="confirm-client-name" class="confirm-value"></span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">Phone</span>
+            <span id="confirm-client-phone" class="confirm-value"></span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">Template</span>
+            <span id="confirm-draft-name" class="confirm-value"></span>
+          </div>
+        </div>
+        <div class="confirm-preview-wrap">
+          <p class="confirm-preview-label">Message Preview</p>
+          <div id="confirm-message-preview" class="confirm-preview-box"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="modal-confirm">Cancel</button>
+        <button id="btn-confirm-send" class="btn-whatsapp">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          Send on WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: MANAGE DRAFTS ===== -->
+  <div id="modal-manage-drafts" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-manage-drafts-title">
+    <div class="modal-sheet modal-sheet--tall">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-manage-drafts-title">Templates</h2>
+        <button class="modal-close" data-close="modal-manage-drafts" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <button id="btn-new-draft" class="btn-outline-full">+ New Template</button>
+        <div id="draft-manage-list"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: ADD / EDIT DRAFT ===== -->
+  <div id="modal-draft-edit" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-draft-edit-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-draft-edit-title">New Template</h2>
+        <button class="modal-close" data-close="modal-draft-edit" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label for="input-draft-name">Template Name</label>
+          <input type="text" id="input-draft-name" placeholder="e.g. Payment Reminder" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label for="input-draft-message">Message</label>
+          <textarea id="input-draft-message" rows="6" placeholder="Hi {name}, just following up…"></textarea>
+          <span class="field-hint">Use <code>{name}</code> to insert client name automatically</span>
+        </div>
+        <input type="hidden" id="input-draft-id" />
+      </div>
+      <div class="modal-footer">
+        <button id="btn-delete-draft" class="btn-danger hidden">Delete</button>
+        <button id="btn-save-draft" class="btn-primary">Save Template</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast-container"></div>
+
+  <script>
+'use strict';
+
+/* =========================================
+   1. STATE LAYER
+   ========================================= */
+const State = (() => {
+  let clients          = [];
+  let drafts           = [];
+  let selectedClientId = null;
+  let selectedDraftId  = null;
+
+  return {
+    getClients:           ()  => [...clients],
+    getDrafts:            ()  => [...drafts],
+    getSelectedClientId:  ()  => selectedClientId,
+    getSelectedDraftId:   ()  => selectedDraftId,
+
+    getClient: (id) => clients.find(c => c.id === id) || null,
+    getDraft:  (id) => drafts.find(d => d.id === id)  || null,
+
+    setClients:           (arr) => { clients = arr; },
+    setDrafts:            (arr) => { drafts  = arr; },
+    setSelectedClientId:  (id)  => { selectedClientId = id; },
+    setSelectedDraftId:   (id)  => { selectedDraftId  = id; },
+  };
+})();
+
+
+/* =========================================
+   2. PERSISTENCE LAYER
+   ========================================= */
+const Store = (() => {
+  const KEYS = { clients: 'followup_clients', drafts: 'followup_drafts' };
+
+  function safeGet(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function safeSet(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      Toast.show('Storage error — check browser settings', 'error');
+    }
+  }
+
+  return {
+    loadClients: () => safeGet(KEYS.clients),
+    saveClients: (arr) => safeSet(KEYS.clients, arr),
+    loadDrafts:  () => safeGet(KEYS.drafts),
+    saveDrafts:  (arr) => safeSet(KEYS.drafts, arr),
+  };
+})();
+
+
+/* =========================================
+   3. LOGIC LAYER
+   ========================================= */
+const Logic = (() => {
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function formatPhone(raw) {
+    if (!raw) return null;
+    const cleaned = raw.replace(/[\s\-().+]/g, '');
+    if (!/^\d{7,15}$/.test(cleaned)) return null;
+    return cleaned;
+  }
+
+  function isValidPhone(raw) {
+    return formatPhone(raw) !== null;
+  }
+
+  function buildMessage(client, draft) {
+    let msg = draft.message || '';
+    msg = msg.replace(/\{name\}/gi, client.name);
+    return msg.trim();
+  }
+
+  function buildWhatsAppURL(phone, message) {
+    const digits = formatPhone(phone);
+    if (!digits) return null;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+  }
+
+  function recordSend(client, messagePreview) {
+    const today = new Date().toDateString();
+    const lastDate = client.lastReminderDate
+      ? new Date(client.lastReminderDate).toDateString()
+      : null;
+
+    const isNewDay = lastDate !== today;
+
+    return {
+      ...client,
+      reminderCountTotal:  (client.reminderCountTotal  || 0) + 1,
+      reminderCountToday:  isNewDay ? 1 : (client.reminderCountToday || 0) + 1,
+      lastReminderDate:    Date.now(),
+      lastMessagePreview:  messagePreview.slice(0, 80),
+    };
+  }
+
+  function formatLastSent(ts) {
+    if (!ts) return null;
+    const diff = Date.now() - ts;
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins  < 1)   return 'Just now';
+    if (mins  < 60)  return `${mins}m ago`;
+    if (hours < 24)  return `${hours}h ago`;
+    if (days  < 7)   return `${days}d ago`;
+    return new Date(ts).toLocaleDateString();
+  }
+
+  function getInitials(name) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  }
+
+  return { uid, formatPhone, isValidPhone, buildMessage, buildWhatsAppURL, recordSend, formatLastSent, getInitials };
+})();
+
+
+/* =========================================
+   4. TOAST NOTIFICATIONS
+   ========================================= */
+const Toast = (() => {
+  const container = () => document.getElementById('toast-container');
+
+  function show(msg, type = 'info', duration = 3000) {
+    const el = document.createElement('div');
+    el.className = `toast toast--${type}`;
+    el.textContent = msg;
+    container().appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity .3s';
+      setTimeout(() => el.remove(), 300);
+    }, duration);
+  }
+
+  return { show };
+})();
+
+
+/* =========================================
+   5. MODAL MANAGER
+   ========================================= */
+const Modal = (() => {
+  function open(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('hidden');
+    const anyOpen = document.querySelector('.modal-overlay:not(.hidden)');
+    if (!anyOpen) document.body.style.overflow = '';
+  }
+
+  function closeAll() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+    document.body.style.overflow = '';
+  }
+
+  return { open, close, closeAll };
+})();
+
+
+/* =========================================
+   6. UI LAYER — RENDERING ONLY
+   ========================================= */
+const UI = (() => {
+
+  function renderStats() {
+    const clients   = State.getClients();
+    const drafts    = State.getDrafts();
+    const today     = new Date().toDateString();
+    const sentToday = clients.reduce((sum, c) => {
+      if (!c.lastReminderDate) return sum;
+      return new Date(c.lastReminderDate).toDateString() === today
+        ? sum + (c.reminderCountToday || 0)
+        : sum;
+    }, 0);
+
+    document.getElementById('stat-clients').textContent    = clients.length;
+    document.getElementById('stat-sent-today').textContent = sentToday;
+    document.getElementById('stat-drafts').textContent     = drafts.length;
+  }
+
+  function renderClients(filterText = '') {
+    const list    = document.getElementById('client-list');
+    const empty   = document.getElementById('empty-state');
+    let   clients = State.getClients();
+
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      clients = clients.filter(c =>
+        c.name.toLowerCase().includes(q) || c.phone.includes(q)
+      );
+    }
+
+    list.innerHTML = '';
+
+    if (clients.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+
+    clients.forEach(client => {
+      const card = document.createElement('div');
+      card.className = 'client-card';
+      card.dataset.clientId = client.id;
+
+      const lastSent    = Logic.formatLastSent(client.lastReminderDate);
+      const initials    = Logic.getInitials(client.name);
+      const totalBadge  = client.reminderCountTotal
+        ? `<span class="client-badge">${client.reminderCountTotal} sent</span>`
+        : '';
+      const lastLine    = client.lastMessagePreview
+        ? `<span class="client-last">${escHtml(client.lastMessagePreview)}</span>`
+        : (lastSent ? `<span class="client-last">${lastSent}</span>` : '');
+
+      card.innerHTML = `
+        <div class="client-avatar">${escHtml(initials)}</div>
+        <div class="client-info">
+          <div class="client-name">${escHtml(client.name)}</div>
+          <div class="client-phone">${escHtml(client.phone)}</div>
+          <div class="client-meta">
+            ${totalBadge}
+            ${lastLine}
+          </div>
+        </div>
+        <div class="client-actions">
+          <button class="btn-edit-client" data-action="edit-client" data-id="${client.id}" aria-label="Edit ${escHtml(client.name)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-send" data-action="send-client" data-id="${client.id}" aria-label="Send WhatsApp to ${escHtml(client.name)}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          </button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    renderStats();
+  }
+
+  function renderDraftPicker() {
+    const drafts    = State.getDrafts();
+    const listEl    = document.getElementById('draft-picker-list');
+    const emptyEl   = document.getElementById('draft-picker-empty');
+
+    listEl.innerHTML = '';
+
+    if (drafts.length === 0) {
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+
+    drafts.forEach(draft => {
+      const item = document.createElement('div');
+      item.className = 'draft-pick-item';
+      item.dataset.action = 'pick-draft';
+      item.dataset.id     = draft.id;
+      item.innerHTML = `
+        <div class="draft-pick-name">${escHtml(draft.name)}</div>
+        <div class="draft-pick-preview">${escHtml(draft.message.slice(0, 60))}…</div>
+      `;
+      listEl.appendChild(item);
     });
   }
 
-  openModal('overlay-pick-draft');
-}
+  function renderDraftManageList() {
+    const drafts = State.getDrafts();
+    const el     = document.getElementById('draft-manage-list');
+    el.innerHTML = '';
 
-// ============================================
-// NEW: selectDraft — bridge between picker and confirm modal
-// ============================================
+    if (drafts.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3);font-size:13px;text-align:center;padding:20px 0;">No templates yet.</p>';
+      return;
+    }
 
-function selectDraft(clientId, draftId) {
-  const client = getClients().find(c => c.id === clientId);
-  const draft  = getDrafts().find(d => d.id === draftId);
-
-  if (!client) { showToast('❌ العميل غير موجود'); return; }
-  if (!draft)  { showToast('❌ الرسالة غير موجودة'); return; }
-
-  const phone = formatPhone(client.phone);
-  if (!phone || phone.length < 10) {
-    showToast('❌ رقم الهاتف غير صالح: ' + client.phone);
-    return;
+    drafts.forEach(draft => {
+      const item = document.createElement('div');
+      item.className = 'draft-manage-item';
+      item.innerHTML = `
+        <div class="draft-manage-info">
+          <div class="draft-manage-name">${escHtml(draft.name)}</div>
+          <div class="draft-manage-preview">${escHtml(draft.message.slice(0, 55))}…</div>
+        </div>
+        <button class="draft-manage-edit" data-action="edit-draft" data-id="${draft.id}" aria-label="Edit ${escHtml(draft.name)}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+      `;
+      el.appendChild(item);
+    });
   }
 
-  // Highlight selected item
-  document.querySelectorAll('.draft-pick-item').forEach(el => el.classList.remove('selected'));
-  const picked = document.querySelector(`.draft-pick-item[data-draft-id="${draftId}"]`);
-  if (picked) picked.classList.add('selected');
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
-  // Persist selection in module-level state
-  selectedClientId = clientId;
-  selectedDraftId  = draftId;
+  return { renderClients, renderDraftPicker, renderDraftManageList, renderStats, escHtml };
+})();
 
-  // Build final message with name substituted
-  const finalMessage = (draft.message || '').replace(/\{\{name\}\}/g, client.name || '');
 
-  // Populate confirmation modal
-  document.getElementById('confirm-avatar').textContent       = getInitials(client.name);
-  document.getElementById('confirm-client-name').textContent  = client.name;
-  document.getElementById('confirm-client-phone').textContent = phone;
-  document.getElementById('confirm-message-preview').textContent = finalMessage;
+/* =========================================
+   7. NAVIGATION LAYER — WhatsApp redirect
+   ========================================= */
+const Navigation = (() => {
+  function openWhatsApp(url) {
+    window.location.href = url;
+  }
+  return { openWhatsApp };
+})();
 
-  // Reset confirm button state
-  const confirmBtn = document.getElementById('btn-confirm-send-action');
-  confirmBtn.disabled = false;
-  confirmBtn.textContent = '✅ إرسال الآن';
 
-  console.log('[selectDraft] client:', client.name, '| phone:', phone);
-  console.log('[selectDraft] draft:', draft.title);
-  console.log('[selectDraft] message:', finalMessage);
+/* =========================================
+   8. ACTION LAYER — event handlers & flows
+   ========================================= */
+const Actions = (() => {
 
-  // Close picker → open confirmation (tiny delay for visual feedback of selection)
-  requestAnimationFrame(() => {
-    closeModal('overlay-pick-draft');
-    openModal('overlay-confirm-send');
+  /* ---------- CLIENT CRUD ---------- */
+
+  function openAddClient() {
+    document.getElementById('modal-client-title').textContent = 'New Client';
+    document.getElementById('input-client-name').value  = '';
+    document.getElementById('input-client-phone').value = '';
+    document.getElementById('input-client-id').value    = '';
+    document.getElementById('btn-delete-client').classList.add('hidden');
+    Modal.open('modal-client');
+    setTimeout(() => document.getElementById('input-client-name').focus(), 300);
+  }
+
+  function openEditClient(id) {
+    const client = State.getClient(id);
+    if (!client) { Toast.show('Client not found', 'error'); return; }
+    document.getElementById('modal-client-title').textContent = 'Edit Client';
+    document.getElementById('input-client-name').value  = client.name;
+    document.getElementById('input-client-phone').value = client.phone;
+    document.getElementById('input-client-id').value    = client.id;
+    document.getElementById('btn-delete-client').classList.remove('hidden');
+    Modal.open('modal-client');
+  }
+
+  function saveClient() {
+    const name  = document.getElementById('input-client-name').value.trim();
+    const phone = document.getElementById('input-client-phone').value.trim();
+    const id    = document.getElementById('input-client-id').value.trim();
+
+    if (!name)                       { Toast.show('Name is required', 'error');        return; }
+    if (!Logic.isValidPhone(phone))  { Toast.show('Enter a valid phone number (include country code, e.g. +201012345678)', 'error'); return; }
+
+    const clients = State.getClients();
+
+    if (id) {
+      const idx = clients.findIndex(c => c.id === id);
+      if (idx === -1) { Toast.show('Client not found', 'error'); return; }
+      clients[idx] = { ...clients[idx], name, phone };
+    } else {
+      clients.push({
+        id:                 Logic.uid(),
+        name,
+        phone,
+        reminderCountTotal: 0,
+        reminderCountToday: 0,
+        lastReminderDate:   null,
+        lastMessagePreview: '',
+      });
+    }
+
+    State.setClients(clients);
+    Store.saveClients(clients);
+    Modal.close('modal-client');
+    UI.renderClients(document.getElementById('search-input').value);
+    Toast.show(id ? 'Client updated' : 'Client added', 'success');
+  }
+
+  function deleteClient() {
+    const id = document.getElementById('input-client-id').value.trim();
+    if (!id) return;
+    if (!confirm('Delete this client? This cannot be undone.')) return;
+    const clients = State.getClients().filter(c => c.id !== id);
+    State.setClients(clients);
+    Store.saveClients(clients);
+    Modal.close('modal-client');
+    UI.renderClients(document.getElementById('search-input').value);
+    Toast.show('Client deleted', 'info');
+  }
+
+
+  /* ---------- SEND FLOW ---------- */
+
+  function inititateSend(clientId) {
+    const client = State.getClient(clientId);
+    if (!client) { Toast.show('Client not found', 'error'); return; }
+    if (!Logic.isValidPhone(client.phone)) {
+      Toast.show('Invalid phone number on this client', 'error'); return;
+    }
+
+    State.setSelectedClientId(clientId);
+    State.setSelectedDraftId(null);
+    UI.renderDraftPicker();
+    Modal.open('modal-drafts');
+  }
+
+  function selectDraft(draftId) {
+    const clientId = State.getSelectedClientId();
+    if (!clientId) { Toast.show('No client selected', 'error'); return; }
+
+    const client = State.getClient(clientId);
+    const draft  = State.getDraft(draftId);
+
+    if (!client) { Toast.show('Client not found', 'error');   return; }
+    if (!draft)  { Toast.show('Template not found', 'error'); return; }
+
+    State.setSelectedDraftId(draftId);
+    Modal.close('modal-drafts');
+
+    const message = Logic.buildMessage(client, draft);
+    document.getElementById('confirm-client-name').textContent  = client.name;
+    document.getElementById('confirm-client-phone').textContent = client.phone;
+    document.getElementById('confirm-draft-name').textContent   = draft.name;
+    document.getElementById('confirm-message-preview').textContent = message;
+
+    Modal.open('modal-confirm');
+  }
+
+  function confirmSend() {
+    const clientId = State.getSelectedClientId();
+    const draftId  = State.getSelectedDraftId();
+
+    if (!clientId || !draftId) {
+      Toast.show('Missing client or template selection', 'error');
+      return;
+    }
+
+    const client = State.getClient(clientId);
+    const draft  = State.getDraft(draftId);
+
+    if (!client) { Toast.show('Client not found', 'error');   return; }
+    if (!draft)  { Toast.show('Template not found', 'error'); return; }
+
+    if (!Logic.isValidPhone(client.phone)) {
+      Toast.show('Invalid phone number', 'error');
+      return;
+    }
+
+    const message = Logic.buildMessage(client, draft);
+    const url     = Logic.buildWhatsAppURL(client.phone, message);
+
+    if (!url) {
+      Toast.show('Could not build WhatsApp link — check phone number', 'error');
+      return;
+    }
+
+    const updated  = Logic.recordSend(client, message);
+    const clients  = State.getClients().map(c => c.id === clientId ? updated : c);
+    State.setClients(clients);
+    Store.saveClients(clients);
+
+    // 🔥 FINAL ACTION — NO code after this
+    Navigation.openWhatsApp(url);
+  }
+
+
+  /* ---------- DRAFT CRUD ---------- */
+
+  function openManageDrafts() {
+    UI.renderDraftManageList();
+    Modal.open('modal-manage-drafts');
+  }
+
+  function openNewDraft() {
+    document.getElementById('modal-draft-edit-title').textContent = 'New Template';
+    document.getElementById('input-draft-name').value    = '';
+    document.getElementById('input-draft-message').value = '';
+    document.getElementById('input-draft-id').value      = '';
+    document.getElementById('btn-delete-draft').classList.add('hidden');
+    Modal.open('modal-draft-edit');
+    setTimeout(() => document.getElementById('input-draft-name').focus(), 300);
+  }
+
+  function openEditDraft(id) {
+    const draft = State.getDraft(id);
+    if (!draft) { Toast.show('Template not found', 'error'); return; }
+    document.getElementById('modal-draft-edit-title').textContent = 'Edit Template';
+    document.getElementById('input-draft-name').value    = draft.name;
+    document.getElementById('input-draft-message').value = draft.message;
+    document.getElementById('input-draft-id').value      = draft.id;
+    document.getElementById('btn-delete-draft').classList.remove('hidden');
+    Modal.open('modal-draft-edit');
+  }
+
+  function saveDraft() {
+    const name    = document.getElementById('input-draft-name').value.trim();
+    const message = document.getElementById('input-draft-message').value.trim();
+    const id      = document.getElementById('input-draft-id').value.trim();
+
+    if (!name)    { Toast.show('Template name is required', 'error');    return; }
+    if (!message) { Toast.show('Message body cannot be empty', 'error'); return; }
+
+    const drafts = State.getDrafts();
+
+    if (id) {
+      const idx = drafts.findIndex(d => d.id === id);
+      if (idx === -1) { Toast.show('Template not found', 'error'); return; }
+      drafts[idx] = { ...drafts[idx], name, message };
+    } else {
+      drafts.push({ id: Logic.uid(), name, message });
+    }
+
+    State.setDrafts(drafts);
+    Store.saveDrafts(drafts);
+    Modal.close('modal-draft-edit');
+    UI.renderDraftManageList();
+    UI.renderStats();
+    Toast.show(id ? 'Template updated' : 'Template saved', 'success');
+  }
+
+  function deleteDraft() {
+    const id = document.getElementById('input-draft-id').value.trim();
+    if (!id) return;
+    if (!confirm('Delete this template? This cannot be undone.')) return;
+    const drafts = State.getDrafts().filter(d => d.id !== id);
+    State.setDrafts(drafts);
+    Store.saveDrafts(drafts);
+    Modal.close('modal-draft-edit');
+    UI.renderDraftManageList();
+    UI.renderStats();
+    Toast.show('Template deleted', 'info');
+  }
+
+  function handleSearch(e) {
+    UI.renderClients(e.target.value);
+  }
+
+  return {
+    openAddClient, openEditClient, saveClient, deleteClient,
+    inititateSend, selectDraft, confirmSend,
+    openManageDrafts, openNewDraft, openEditDraft, saveDraft, deleteDraft,
+    handleSearch,
+  };
+})();
+
+
+/* =========================================
+   9. EVENT BINDING
+   ========================================= */
+function bindEvents() {
+
+  document.getElementById('btn-add-client').addEventListener('click', () => Actions.openAddClient());
+  document.getElementById('btn-manage-drafts').addEventListener('click', () => Actions.openManageDrafts());
+
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => Modal.close(btn.dataset.close));
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) Modal.close(overlay.id);
+    });
+  });
+
+  document.getElementById('btn-save-client').addEventListener('click',   () => Actions.saveClient());
+  document.getElementById('btn-delete-client').addEventListener('click', () => Actions.deleteClient());
+
+  document.getElementById('btn-save-draft').addEventListener('click',   () => Actions.saveDraft());
+  document.getElementById('btn-delete-draft').addEventListener('click', () => Actions.deleteDraft());
+  document.getElementById('btn-new-draft').addEventListener('click',    () => Actions.openNewDraft());
+
+  // CRITICAL — direct click → WhatsApp, no middleware
+  document.getElementById('btn-confirm-send').addEventListener('click', () => Actions.confirmSend());
+
+  document.getElementById('btn-goto-drafts-from-picker').addEventListener('click', () => {
+    Modal.close('modal-drafts');
+    Actions.openManageDrafts();
+  });
+
+  document.getElementById('search-input').addEventListener('input', Actions.handleSearch);
+
+  document.getElementById('client-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id     = btn.dataset.id;
+    if (action === 'send-client') Actions.inititateSend(id);
+    if (action === 'edit-client') Actions.openEditClient(id);
+  });
+
+  document.getElementById('draft-picker-list').addEventListener('click', (e) => {
+    const item = e.target.closest('[data-action="pick-draft"]');
+    if (!item) return;
+    Actions.selectDraft(item.dataset.id);
+  });
+
+  document.getElementById('draft-manage-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="edit-draft"]');
+    if (!btn) return;
+    Actions.openEditDraft(btn.dataset.id);
+  });
+
+  document.getElementById('input-client-phone').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') Actions.saveClient();
+  });
+  document.getElementById('input-draft-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('input-draft-message').focus();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const open = document.querySelector('.modal-overlay:not(.hidden)');
+      if (open) Modal.close(open.id);
+    }
   });
 }
 
-// ============================================
-// NEW: confirmSend — the ONLY place WhatsApp opens
-// ============================================
 
-function confirmSend(btn) {
-  // Guard: state must be set
-  if (!selectedClientId || !selectedDraftId) {
-    showToast('❌ حدث خطأ، ابدأ من جديد');
-    closeModal('overlay-confirm-send');
-    return;
+/* =========================================
+   10. INIT
+   ========================================= */
+function initApp() {
+  const clients = Store.loadClients();
+  const drafts  = Store.loadDrafts();
+
+  State.setClients(clients);
+  State.setDrafts(drafts);
+
+  if (clients.length === 0 && drafts.length === 0) {
+    seedDemoData();
   }
 
-  const clients = getClients();
-  const client  = clients.find(c => c.id === selectedClientId);
-  const draft   = getDrafts().find(d => d.id === selectedDraftId);
+  bindEvents();
 
-  if (!client) { showToast('❌ العميل غير موجود'); closeModal('overlay-confirm-send'); return; }
-  if (!draft)  { showToast('❌ الرسالة غير موجودة'); closeModal('overlay-confirm-send'); return; }
-
-  const phone = formatPhone(client.phone);
-  if (!phone || phone.length < 10) {
-    showToast('❌ رقم الهاتف غير صالح');
-    return;
-  }
-
-  const message = (draft.message || '').replace(/\{\{name\}\}/g, client.name || '');
-  if (!message.trim()) { showToast('❌ الرسالة فارغة'); return; }
-
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-  console.log('[confirmSend] ▶ client:', client.name);
-  console.log('[confirmSend] ▶ phone:', phone);
-  console.log('[confirmSend] ▶ url:', url);
-
-  // 1. Disable button immediately — prevent double-tap
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الفتح…'; }
-
-  // 2. Persist to localStorage FIRST — before any navigation
-  const updated = clients.map(c => {
-    if (c.id !== selectedClientId) return c;
-    return {
-      ...c,
-      reminderCountTotal: (c.reminderCountTotal || 0) + 1,
-      reminderCountToday: (c.reminderCountToday || 0) + 1,
-      lastReminderDate: Date.now()
-    };
-  });
-  saveClients(updated);
-
-  // 3. Close modal
-  closeModal('overlay-confirm-send');
-
-  // 4. Flash card (non-blocking visual — no effect on navigation)
-  const card = document.querySelector(`[data-id="${selectedClientId}"]`);
-  if (card) {
-    card.classList.add('sent-flash');
-    setTimeout(() => card.classList.remove('sent-flash'), 600);
-  }
-
-  // 5. Clear state
-  selectedClientId = null;
-  selectedDraftId  = null;
-
-  // 6. Update UI lightly (stats bar only — no full re-render before navigation)
-  renderStats();
-  renderNotifBanner();
-
-  // 7. Navigate — synchronous, direct from user gesture, no setTimeout
-  window.location.href = url;
+  UI.renderClients();
+  UI.renderStats();
 }
 
-// ============================================
-// UI RENDERING
-// ============================================
+function seedDemoData() {
+  const draftId = Logic.uid();
+  const drafts = [
+    {
+      id:      draftId,
+      name:    'Payment Reminder',
+      message: 'Hi {name}, just a friendly reminder that your payment is due. Please let us know if you have any questions. Thank you! 🙏',
+    },
+    {
+      id:      Logic.uid(),
+      name:    'Follow-up Check-in',
+      message: 'Hey {name}! Just checking in to see how everything is going. Feel free to reach out anytime. 😊',
+    },
+  ];
 
-function renderAll() {
-  renderStats();
-  renderClients();
-  renderDrafts();
-  renderNotifBanner();
-}
-
-function renderStats() {
-  const clients = getClients();
-  const needs = clients.filter(c => evaluateClientStatus(c) === 'needs').length;
-  const sentToday = clients.reduce((a, c) => a + (c.reminderCountToday || 0), 0);
-
-  document.getElementById('stat-total').textContent = clients.length;
-  document.getElementById('stat-needs').textContent = needs;
-  document.getElementById('stat-sent').textContent = sentToday;
-}
-
-function renderClients() {
-  const search = document.getElementById('search-input').value.toLowerCase();
-  let clients = getClients();
-
-  if (search) {
-    clients = clients.filter(c =>
-      c.name.toLowerCase().includes(search) ||
-      (c.phone || '').includes(search)
-    );
-  }
-
-  // Sort: needs first
-  clients.sort((a, b) => {
-    const sa = evaluateClientStatus(a) === 'needs' ? 0 : 1;
-    const sb = evaluateClientStatus(b) === 'needs' ? 0 : 1;
-    return sa - sb;
-  });
-
-  const list = document.getElementById('clients-list');
-
-  if (clients.length === 0) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">👥</div>
-      <div class="empty-title">${search ? 'لا توجد نتائج' : 'لا يوجد عملاء بعد'}</div>
-      <div class="empty-sub">${search ? 'جرب كلمة بحث أخرى' : 'أضف أول عميل لك لبدء المتابعة'}</div>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = clients.map((c, i) => {
-    const status = evaluateClientStatus(c);
-    const needs = status === 'needs';
-    const delay = i < 5 ? `card-anim-delay-${i}` : '';
-    const lastStr = c.lastReminderDate
-      ? formatRelativeTime(c.lastReminderDate)
-      : 'لم يُرسل بعد';
-
-    return `<div class="client-card ${needs ? 'needs-followup' : ''} ${delay}" data-id="${c.id}">
-      <div class="card-top">
-        <div class="card-left">
-          <div class="avatar"><span class="avatar-text">${getInitials(c.name)}</span></div>
-          <div>
-            <div class="client-name">${escHtml(c.name)}</div>
-            <div class="client-phone" dir="ltr">${escHtml(c.phone)}</div>
-          </div>
-        </div>
-        <span class="badge ${needs ? 'badge-needs' : 'badge-ok'}">${needs ? '⚠ متابعة' : '✓ تم'}</span>
-      </div>
-
-      <div class="card-stats">
-        <div class="card-stat">
-          <div class="card-stat-val today-val">${c.reminderCountToday || 0}</div>
-          <div class="card-stat-lbl">اليوم</div>
-        </div>
-        <div class="card-stat">
-          <div class="card-stat-val total-val">${c.reminderCountTotal || 0}</div>
-          <div class="card-stat-lbl">الإجمالي</div>
-        </div>
-        <div class="card-stat">
-          <div class="card-stat-val time-val">${lastStr}</div>
-          <div class="card-stat-lbl">آخر إرسال</div>
-        </div>
-      </div>
-
-      <div class="card-actions">
-        <button class="btn btn-send" data-action="send" data-id="${c.id}">📩 إرسال</button>
-        <button class="btn btn-edit" data-action="detail" data-id="${c.id}">•••</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderDrafts() {
-  const drafts = getDrafts();
-  const list = document.getElementById('drafts-list');
-
-  if (drafts.length === 0) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">✉️</div>
-      <div class="empty-title">لا توجد رسائل بعد</div>
-      <div class="empty-sub">أضف رسائل جاهزة لاستخدامها عند إرسال التذكيرات</div>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = drafts.map((d, i) => {
-    const delay = i < 5 ? `card-anim-delay-${i}` : '';
-    return `<div class="draft-card ${delay}">
-      <div class="draft-header">
-        <div class="draft-title">✉️ ${escHtml(d.title)}</div>
-        <div class="draft-actions">
-          <button class="btn-sm btn-sm-edit" onclick="openEditDraftModal('${d.id}')">تعديل</button>
-          <button class="btn-sm btn-sm-delete" onclick="deleteDraft('${d.id}')">حذف</button>
-        </div>
-      </div>
-      <div class="draft-body">${escHtml(d.message)}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderNotifBanner() {
-  const clients = getClients();
-  const needsCount = clients.filter(c => evaluateClientStatus(c) === 'needs').length;
-  const banner = document.getElementById('notif-banner');
-
-  if (needsCount > 0) {
-    document.getElementById('notif-text').textContent =
-      `لديك ${needsCount} عميل${needsCount > 1 ? '' : ''} يحتاج${needsCount > 1 ? 'ون' : ''} متابعة اليوم`;
-    banner.style.display = 'flex';
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
-// ============================================
-// CLIENT OPERATIONS
-// ============================================
-
-function openAddClientModal() {
-  document.getElementById('client-form-title').textContent = 'إضافة عميل جديد';
-  document.getElementById('client-id').value = '';
-  document.getElementById('client-name').value = '';
-  document.getElementById('client-phone').value = '';
-  openModal('overlay-client');
-}
-
-function openEditClientModal(clientId) {
-  const client = getClients().find(c => c.id === clientId);
-  if (!client) return;
-  document.getElementById('client-form-title').textContent = 'تعديل العميل';
-  document.getElementById('client-id').value = client.id;
-  document.getElementById('client-name').value = client.name;
-  document.getElementById('client-phone').value = client.phone;
-  closeModal('overlay-client-detail');
-  openModal('overlay-client');
-}
-
-function saveClient() {
-  const id    = document.getElementById('client-id').value;
-  const name  = document.getElementById('client-name').value.trim();
-  const phone = document.getElementById('client-phone').value.trim();
-
-  if (!name)  { shakeField('client-name');  showToast('❌ أدخل اسم العميل'); return; }
-  if (!phone) { shakeField('client-phone'); showToast('❌ أدخل رقم الهاتف'); return; }
-
-  // Validate digits length
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length < 10) {
-    shakeField('client-phone');
-    showToast('❌ رقم الهاتف قصير جداً (10 أرقام على الأقل)');
-    return;
-  }
-
-  const clients = getClients();
-
-  if (id) {
-    const idx = clients.findIndex(c => c.id === id);
-    if (idx >= 0) clients[idx] = { ...clients[idx], name, phone };
-  } else {
-    clients.push({
-      id: generateId(),
-      name,
-      phone,
+  const clients = [
+    {
+      id:                 Logic.uid(),
+      name:               'Sarah Johnson',
+      phone:              '+201012345678',
+      reminderCountTotal: 3,
+      reminderCountToday: 1,
+      lastReminderDate:   Date.now() - 3600000,
+      lastMessagePreview: 'Hi Sarah, just a friendly reminder that your payment…',
+    },
+    {
+      id:                 Logic.uid(),
+      name:               'Ahmed Hassan',
+      phone:              '+201198765432',
       reminderCountTotal: 0,
       reminderCountToday: 0,
-      lastReminderDate: null,
-      createdAt: Date.now()
-    });
-  }
+      lastReminderDate:   null,
+      lastMessagePreview: '',
+    },
+  ];
 
-  saveClients(clients);
-  closeModal('overlay-client');
-  showToast('✅ تم الحفظ!');
-  renderAll();
+  State.setClients(clients);
+  State.setDrafts(drafts);
+  Store.saveClients(clients);
+  Store.saveDrafts(drafts);
 }
 
-function deleteClient(clientId) {
-  if (!confirm('هل تريد حذف هذا العميل؟')) return;
-  const clients = getClients().filter(c => c.id !== clientId);
-  saveClients(clients);
-  closeModal('overlay-client-detail');
-  showToast('🗑 تم الحذف');
-  renderAll();
-}
-
-function openClientDetail(clientId) {
-  const c = getClients().find(c => c.id === clientId);
-  if (!c) return;
-  const status = evaluateClientStatus(c);
-  const lastStr = c.lastReminderDate ? formatRelativeTime(c.lastReminderDate) : 'لم يُرسل بعد';
-
-  document.getElementById('client-detail-content').innerHTML = `
-    <div class="detail-avatar">${getInitials(c.name)}</div>
-    <div class="detail-name">${escHtml(c.name)}</div>
-    <div class="detail-phone" dir="ltr">${escHtml(c.phone)}</div>
-    <div class="last-reminder-info" style="margin-bottom:16px;">
-      📅 آخر إرسال: ${lastStr} &nbsp;|&nbsp; 📊 الإجمالي: ${c.reminderCountTotal || 0}
-    </div>
-    <div class="detail-actions">
-      <button class="btn-full btn-save" style="flex:2;" onclick="openEditClientModal('${c.id}')">✏️ تعديل</button>
-      <button class="btn-danger" onclick="deleteClient('${c.id}')">🗑 حذف</button>
-    </div>
-    <div style="display:flex;gap:10px;margin-bottom:8px;">
-      <button class="btn btn-send" style="flex:1;padding:12px;"
-              onclick="closeModal('overlay-client-detail');openPickDraft('${c.id}')">📩 إرسال رسالة</button>
-    </div>
-  `;
-  openModal('overlay-client-detail');
-}
-
-// openWhatsApp — REMOVED. All WhatsApp navigation now goes through confirmSend only.
-
-// ============================================
-// DRAFT OPERATIONS
-// ============================================
-
-function openAddDraftModal() {
-  document.getElementById('draft-form-title').textContent = 'رسالة جديدة';
-  document.getElementById('draft-id').value = '';
-  document.getElementById('draft-title').value = '';
-  document.getElementById('draft-message').value = '';
-  openModal('overlay-draft');
-}
-
-function openEditDraftModal(draftId) {
-  const d = getDrafts().find(d => d.id === draftId);
-  if (!d) return;
-  document.getElementById('draft-form-title').textContent = 'تعديل الرسالة';
-  document.getElementById('draft-id').value = d.id;
-  document.getElementById('draft-title').value = d.title;
-  document.getElementById('draft-message').value = d.message;
-  openModal('overlay-draft');
-}
-
-function saveDraft() {
-  const id = document.getElementById('draft-id').value;
-  const title = document.getElementById('draft-title').value.trim();
-  const message = document.getElementById('draft-message').value.trim();
-
-  if (!title || !message) { shakeField(title ? 'draft-message' : 'draft-title'); return; }
-
-  const drafts = getDrafts();
-  if (id) {
-    const idx = drafts.findIndex(d => d.id === id);
-    if (idx >= 0) drafts[idx] = { ...drafts[idx], title, message };
-  } else {
-    drafts.push({ id: generateId(), title, message });
-  }
-
-  saveDrafts(drafts);
-  closeModal('overlay-draft');
-  showToast('✅ تم الحفظ!');
-  renderAll();
-}
-
-function deleteDraft(draftId) {
-  if (!confirm('هل تريد حذف هذه الرسالة؟')) return;
-  saveDrafts(getDrafts().filter(d => d.id !== draftId));
-  showToast('🗑 تم الحذف');
-  renderAll();
-}
-
-// ============================================
-// SETTINGS
-// ============================================
-
-function openSettingsModal() {
-  const state = getAppState();
-  document.getElementById('reset-time-input').value = state.dailyResetTime || '06:00';
-  openModal('overlay-settings');
-}
-
-function saveSettings() {
-  const t = document.getElementById('reset-time-input').value.trim();
-  const state = getAppState();
-  state.dailyResetTime = t || '06:00';
-  saveAppState(state);
-  closeModal('overlay-settings');
-  showToast('✅ تم الحفظ!');
-}
-
-// ============================================
-// NOTIFICATIONS
-// ============================================
-
-function requestNotifPermission() {
-  if ('Notification' in window) {
-    Notification.requestPermission().then(perm => {
-      if (perm === 'granted') {
-        showToast('🔔 تم تفعيل الإشعارات!');
-        checkAndNotify();
-      } else {
-        showToast('❌ تم رفض الإشعارات');
-      }
-    });
-  }
-}
-
-function checkAndNotify() {
-  if (Notification.permission !== 'granted') return;
-  const needs = getClients().filter(c => evaluateClientStatus(c) === 'needs').length;
-  if (needs > 0) {
-    new Notification('متابعة العملاء', {
-      body: `لديك ${needs} عميل يحتاج متابعة اليوم`,
-      icon: '📋'
-    });
-  }
-}
-
-// ============================================
-// MODAL HELPERS
-// ============================================
-
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function closeOnOverlay(event, id) {
-  if (event.target === document.getElementById(id)) closeModal(id);
-}
-
-// ============================================
-// TAB SWITCHING
-// ============================================
-
-function switchTab(tab, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  document.getElementById('content-clients').style.display = tab === 'clients' ? '' : 'none';
-  document.getElementById('content-drafts').style.display = tab === 'drafts' ? '' : 'none';
-  document.getElementById('search-wrap').style.display = tab === 'clients' ? '' : 'none';
-}
-
-// ============================================
-// UTILITY
-// ============================================
-
-// ============================================
-// PHONE NORMALIZATION
-// ============================================
-
-function formatPhone(phone) {
-  if (!phone) return '';
-  let p = String(phone).replace(/\D/g, '');          // strip non-digits
-  if (!p) return '';
-  if (p.startsWith('00')) p = p.slice(2);             // 0020… → 20…
-  if (p.startsWith('0') && p.length <= 11) {          // 01xxxxxxxx → 201xxxxxxxx
-    p = '20' + p.slice(1);
-  }
-  if (!p.startsWith('20') && p.length <= 10) {        // bare 10-digit → assume EG
-    p = '20' + p;
-  }
-  return p;
-}
-
-// ============================================
-
-function showToast(msg) {
-  const t = document.getElementById('success-toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function getInitials(name) {
-  return name.trim().charAt(0).toUpperCase();
-}
-
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function formatRelativeTime(ts) {
-  if (!ts) return '—';
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  const hrs = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return 'الآن';
-  if (mins < 60) return `منذ ${mins} د`;
-  if (hrs < 24) return `منذ ${hrs} س`;
-  return `منذ ${days} ي`;
-}
-
-function shakeField(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.style.borderColor = 'var(--danger)';
-  el.style.boxShadow = '0 0 0 3px rgba(255,95,109,0.25)';
-  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1500);
-  el.focus();
-}
-
-function updateHeaderDate() {
-  const now = new Date();
-  const days = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  document.getElementById('today-date').textContent =
-    `${days[now.getDay()]}، ${now.getDate()} ${months[now.getMonth()]}`;
-}
-
-// ============================================
-// SEED DEFAULT DRAFTS IF NONE
-// ============================================
-
-function seedDefaultDrafts() {
-  if (getDrafts().length === 0) {
-    saveDrafts([
-      {
-        id: generateId(),
-        title: 'تذكير عام',
-        message: 'السلام عليكم {{name}}،\n\nأردت فقط التواصل معك للاطمئنان ومتابعة احتياجاتك.\n\nهل تحتاج أي مساعدة؟ 😊'
-      },
-      {
-        id: generateId(),
-        title: 'متابعة عرض',
-        message: 'مرحباً {{name}}،\n\nنتابع معك بخصوص العرض الذي أرسلناه مسبقاً.\n\nهل لديك أي استفسارات؟ نحن جاهزون للمساعدة! 🎯'
-      },
-      {
-        id: generateId(),
-        title: 'تذكير دوري',
-        message: 'أهلاً {{name}}،\n\nمجرد تذكير سريع — نحن هنا دائماً لخدمتك.\n\nلا تتردد في التواصل! ✨'
-      }
-    ]);
-  }
-}
-
-// ============================================
-// INIT
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-  handleDailyReset();
-  seedDefaultDrafts();
-  updateHeaderDate();
-  renderAll();
-  checkAndNotify();
-
-  // Delegated touch/click handler for client card buttons — works on all mobile browsers
-  document.getElementById('clients-list').addEventListener('click', function(e) {
-    const btn = e.target.closest('[data-action]');
-    if (!btn || btn.disabled) return;
-    const action   = btn.dataset.action;
-    const clientId = btn.dataset.id;
-
-    // btn-wa REMOVED — no direct WA action on card
-    if (action === 'send') {
-      openPickDraft(clientId);
-    } else if (action === 'detail') {
-      openClientDetail(clientId);
-    }
-  });
-
-  // Keyboard close
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.overlay.open').forEach(o => {
-        o.classList.remove('open');
-        document.body.style.overflow = '';
-      });
-    }
-  });
-});
-</script>
+// Boot — script is at bottom of body so DOM is ready
+document.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>

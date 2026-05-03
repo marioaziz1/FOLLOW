@@ -909,6 +909,41 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
 
 /* =========================================
+   SYNC STATUS BAR
+   ========================================= */
+#sync-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  max-width: 100%;
+}
+
+#sync-indicator {
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: .3px;
+  transition: color .3s;
+}
+
+#last-synced {
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+@keyframes spin {
+  from { display: inline-block; transform: rotate(0deg);   }
+  to   { display: inline-block; transform: rotate(360deg); }
+}
+
+@media (min-width: 641px) {
+  #sync-bar { max-width: 640px; margin: 0 auto; }
+}
+
+/* =========================================
    RESPONSIVE
    ========================================= */
 @media (max-width: 400px) {
@@ -948,6 +983,12 @@ body {
         </div>
       </div>
     </header>
+
+    <!-- SYNC STATUS BAR -->
+    <div id="sync-bar">
+      <span id="sync-indicator">⟳ Connecting…</span>
+      <span id="last-synced"></span>
+    </div>
 
     <!-- STATS BAR -->
     <div id="stats-bar">
@@ -1119,11 +1160,38 @@ body {
   <!-- ===== TOAST ===== -->
   <div id="toast-container"></div>
 
+  <!-- Firebase SDK (modular compat build — works in vanilla JS) -->
+  <script type="module">
+    // Import Firebase modules and expose to window for non-module scripts
+    import { initializeApp }                               from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getDatabase, ref, set, update, remove, push,
+             onValue, off, connectDatabaseEmulator }       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyA08mmUo0aQUdWJpc7c8eyh4qYy8VsNA7I",
+      authDomain:        "ministry-727e9.firebaseapp.com",
+      databaseURL:       "https://ministry-727e9-default-rtdb.firebaseio.com",
+      projectId:         "ministry-727e9",
+      storageBucket:     "ministry-727e9.firebasestorage.app",
+      messagingSenderId: "157338909355",
+      appId:             "1:157338909355:web:416c00c8be0b74f3de15ee",
+      measurementId:     "G-0NB1R2SVZZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // Expose Firebase utilities to global scope for the main (non-module) script
+    window._FB = { db, ref, set, update, remove, push, onValue, off };
+    window._FB_READY = true;
+    document.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
   <script>
 'use strict';
 
 /* =========================================
-   1. STATE LAYER
+   1. STATE LAYER  (unchanged)
    ========================================= */
 const State = (() => {
   let clients          = [];
@@ -1149,32 +1217,318 @@ const State = (() => {
 
 
 /* =========================================
-   2. PERSISTENCE LAYER
+   2a. LOCAL STORAGE — offline cache
    ========================================= */
-const Store = (() => {
+const LocalCache = (() => {
   const KEYS = { clients: 'followup_clients', drafts: 'followup_drafts' };
 
   function safeGet(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || [];
-    } catch (_) {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(key)) || []; }
+    catch (_) { return []; }
   }
 
   function safeSet(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
-      Toast.show('Storage error — check browser settings', 'error');
-    }
+    try { localStorage.setItem(key, JSON.stringify(value)); }
+    catch (e) { console.warn('[Cache] write failed', e); }
   }
 
   return {
-    loadClients: () => safeGet(KEYS.clients),
+    loadClients: ()    => safeGet(KEYS.clients),
     saveClients: (arr) => safeSet(KEYS.clients, arr),
-    loadDrafts:  () => safeGet(KEYS.drafts),
+    loadDrafts:  ()    => safeGet(KEYS.drafts),
     saveDrafts:  (arr) => safeSet(KEYS.drafts, arr),
+  };
+})();
+
+
+/* =========================================
+   2b. FIREBASE SERVICE LAYER
+   ========================================= */
+const FirebaseService = (() => {
+  // Listener references — kept so we can call off() to avoid duplicates
+  let _clientsListener = null;
+  let _draftsListener  = null;
+
+  // Debounce timers for write coalescing
+  const _debounceTimers = {};
+
+  // Guards to suppress re-entrant listener-triggered writes
+  let _suppressRerender = false;
+
+  /* ---------- helpers ---------- */
+
+  function _db()  { return window._FB?.db  || null; }
+  function _ref() { return window._FB?.ref  || null; }
+
+  function _objToArray(obj) {
+    if (!obj || typeof obj !== 'object') return [];
+    return Object.entries(obj).map(([fbKey, val]) => ({ ...val, _fbKey: fbKey }));
+  }
+
+  function _debounce(key, fn, delay = 600) {
+    clearTimeout(_debounceTimers[key]);
+    _debounceTimers[key] = setTimeout(fn, delay);
+  }
+
+  /* ---------- Sync indicator ---------- */
+
+  function _setSyncStatus(state) {
+    // state: 'syncing' | 'synced' | 'offline' | 'error'
+    const el = document.getElementById('sync-indicator');
+    if (!el) return;
+    const icons   = { syncing: '⟳', synced: '●', offline: '⚡', error: '✕' };
+    const labels  = { syncing: 'Syncing…', synced: 'Live', offline: 'Offline', error: 'Error' };
+    const colors  = { syncing: 'var(--text-3)', synced: 'var(--whatsapp)', offline: '#f0a840', error: 'var(--danger)' };
+    el.textContent       = `${icons[state]} ${labels[state]}`;
+    el.style.color       = colors[state];
+    el.dataset.syncState = state;
+    if (state === 'syncing') el.style.animation = 'spin .8s linear infinite';
+    else                     el.style.animation = 'none';
+  }
+
+  /* ---------- REAL-TIME LISTENERS ---------- */
+
+  function attachListeners() {
+    const db  = _db();
+    const ref = _ref();
+    if (!db || !ref) { console.warn('[Firebase] SDK not ready for listeners'); return; }
+
+    // Tear down any existing listeners first (prevent duplicates)
+    detachListeners();
+
+    _setSyncStatus('syncing');
+
+    // ── Clients listener ──────────────────────────────────────────
+    _clientsListener = ref(db, 'clients');
+    window._FB.onValue(_clientsListener, (snapshot) => {
+      const raw     = snapshot.val();
+      const clients = _objToArray(raw);
+      LocalCache.saveClients(clients);       // update offline cache
+      _suppressRerender = true;
+      State.setClients(clients);
+      _suppressRerender = false;
+      UI.renderClients(document.getElementById('search-input')?.value || '');
+      UI.renderStats();
+      _setSyncStatus('synced');
+      _updateLastSynced();
+    }, (err) => {
+      console.error('[Firebase] clients listener error', err);
+      _setSyncStatus('error');
+      Toast.show('Firebase sync error — using local data', 'error');
+    });
+
+    // ── Drafts listener ───────────────────────────────────────────
+    _draftsListener = ref(db, 'drafts');
+    window._FB.onValue(_draftsListener, (snapshot) => {
+      const raw    = snapshot.val();
+      const drafts = _objToArray(raw);
+      LocalCache.saveDrafts(drafts);
+      _suppressRerender = true;
+      State.setDrafts(drafts);
+      _suppressRerender = false;
+      UI.renderStats();
+      _setSyncStatus('synced');
+      _updateLastSynced();
+    }, (err) => {
+      console.error('[Firebase] drafts listener error', err);
+      _setSyncStatus('error');
+    });
+  }
+
+  function detachListeners() {
+    const { off } = window._FB || {};
+    if (!off) return;
+    if (_clientsListener) { off(_clientsListener); _clientsListener = null; }
+    if (_draftsListener)  { off(_draftsListener);  _draftsListener  = null; }
+  }
+
+  function _updateLastSynced() {
+    const el = document.getElementById('last-synced');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = `Last sync: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+  }
+
+  /* ---------- CLIENT WRITES ---------- */
+
+  async function addClient(clientData) {
+    const { db, ref, push, set } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    try {
+      _setSyncStatus('syncing');
+      const newRef = push(ref(db, 'clients'));
+      await set(newRef, { ...clientData, id: newRef.key });
+      LocalCache.saveClients(State.getClients());
+      _setSyncStatus('synced');
+    } catch (err) {
+      _handleWriteError(err, 'add client');
+      // Fallback: keep in local state (already set by caller)
+      LocalCache.saveClients(State.getClients());
+      throw err;
+    }
+  }
+
+  async function updateClient(clientId, data) {
+    const { db, ref, update } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    _debounce(`client-${clientId}`, async () => {
+      try {
+        _setSyncStatus('syncing');
+        // Find the Firebase key (_fbKey) for this client
+        const client = State.getClient(clientId);
+        const fbKey  = client?._fbKey || clientId;
+        await update(ref(db, `clients/${fbKey}`), data);
+        _setSyncStatus('synced');
+      } catch (err) {
+        _handleWriteError(err, 'update client');
+        LocalCache.saveClients(State.getClients());
+      }
+    }, 300);
+  }
+
+  async function deleteClient(clientId) {
+    const { db, ref, remove } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    try {
+      _setSyncStatus('syncing');
+      const client = State.getClient(clientId);
+      const fbKey  = client?._fbKey || clientId;
+      await remove(ref(db, `clients/${fbKey}`));
+      _setSyncStatus('synced');
+    } catch (err) {
+      _handleWriteError(err, 'delete client');
+      throw err;
+    }
+  }
+
+  /* ---------- DRAFT WRITES ---------- */
+
+  async function addDraft(draftData) {
+    const { db, ref, push, set } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    try {
+      _setSyncStatus('syncing');
+      const newRef = push(ref(db, 'drafts'));
+      await set(newRef, { ...draftData, id: newRef.key });
+      _setSyncStatus('synced');
+    } catch (err) {
+      _handleWriteError(err, 'add draft');
+      LocalCache.saveDrafts(State.getDrafts());
+      throw err;
+    }
+  }
+
+  async function updateDraft(draftId, data) {
+    const { db, ref, update } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    _debounce(`draft-${draftId}`, async () => {
+      try {
+        _setSyncStatus('syncing');
+        const draft = State.getDraft(draftId);
+        const fbKey = draft?._fbKey || draftId;
+        await update(ref(db, `drafts/${fbKey}`), data);
+        _setSyncStatus('synced');
+      } catch (err) {
+        _handleWriteError(err, 'update draft');
+        LocalCache.saveDrafts(State.getDrafts());
+      }
+    }, 300);
+  }
+
+  async function deleteDraft(draftId) {
+    const { db, ref, remove } = window._FB || {};
+    if (!db) throw new Error('Firebase not available');
+    try {
+      _setSyncStatus('syncing');
+      const draft = State.getDraft(draftId);
+      const fbKey = draft?._fbKey || draftId;
+      await remove(ref(db, `drafts/${fbKey}`));
+      _setSyncStatus('synced');
+    } catch (err) {
+      _handleWriteError(err, 'delete draft');
+      throw err;
+    }
+  }
+
+  /* ---------- SEED (first-run) ---------- */
+
+  async function seedIfEmpty(clients, drafts) {
+    const { db, ref, push, set } = window._FB || {};
+    if (!db) return;
+    try {
+      for (const c of clients) {
+        const newRef = push(ref(db, 'clients'));
+        await set(newRef, { ...c, id: newRef.key });
+      }
+      for (const d of drafts) {
+        const newRef = push(ref(db, 'drafts'));
+        await set(newRef, { ...d, id: newRef.key });
+      }
+    } catch (err) {
+      console.warn('[Firebase] seed failed', err);
+    }
+  }
+
+  /* ---------- error handler ---------- */
+
+  function _handleWriteError(err, op) {
+    console.error(`[Firebase] ${op} failed`, err);
+    _setSyncStatus('error');
+    Toast.show(`Sync failed (${op}) — saved locally`, 'error');
+  }
+
+  /* ---------- network awareness ---------- */
+
+  function watchNetwork() {
+    window.addEventListener('online',  () => {
+      _setSyncStatus('syncing');
+      Toast.show('Back online — syncing…', 'info');
+      attachListeners(); // re-attach after reconnect
+    });
+    window.addEventListener('offline', () => {
+      _setSyncStatus('offline');
+      Toast.show('Offline — changes saved locally', 'info');
+    });
+  }
+
+  return {
+    attachListeners,
+    detachListeners,
+    addClient,
+    updateClient,
+    deleteClient,
+    addDraft,
+    updateDraft,
+    deleteDraft,
+    seedIfEmpty,
+    watchNetwork,
+    setSyncStatus: _setSyncStatus,
+  };
+})();
+
+
+/* =========================================
+   2c. STORE — public API used by Actions
+        Routes to Firebase; falls back to
+        LocalCache on failure
+   ========================================= */
+const Store = (() => {
+
+  // These remain synchronous for the UI but fire async Firebase writes in background
+  function saveClients(arr) {
+    LocalCache.saveClients(arr);       // instant local backup
+    // Firebase writes are handled directly in Actions via FirebaseService
+  }
+
+  function saveDrafts(arr) {
+    LocalCache.saveDrafts(arr);
+  }
+
+  return {
+    loadClients: LocalCache.loadClients,
+    saveClients,
+    loadDrafts:  LocalCache.loadDrafts,
+    saveDrafts,
   };
 })();
 
@@ -1499,9 +1853,14 @@ const Actions = (() => {
     if (id) {
       const idx = clients.findIndex(c => c.id === id);
       if (idx === -1) { Toast.show('Client not found', 'error'); return; }
-      clients[idx] = { ...clients[idx], name, phone };
+      const updated = { ...clients[idx], name, phone };
+      clients[idx]  = updated;
+      State.setClients(clients);
+      Store.saveClients(clients);
+      // Firebase write (non-blocking)
+      FirebaseService.updateClient(id, { name, phone }).catch(() => {});
     } else {
-      clients.push({
+      const newClient = {
         id:                 Logic.uid(),
         name,
         phone,
@@ -1509,11 +1868,14 @@ const Actions = (() => {
         reminderCountToday: 0,
         lastReminderDate:   null,
         lastMessagePreview: '',
-      });
+      };
+      clients.push(newClient);
+      State.setClients(clients);
+      Store.saveClients(clients);
+      // Firebase write (non-blocking)
+      FirebaseService.addClient(newClient).catch(() => {});
     }
 
-    State.setClients(clients);
-    Store.saveClients(clients);
     Modal.close('modal-client');
     UI.renderClients(document.getElementById('search-input').value);
     Toast.show(id ? 'Client updated' : 'Client added', 'success');
@@ -1529,6 +1891,8 @@ const Actions = (() => {
     Modal.close('modal-client');
     UI.renderClients(document.getElementById('search-input').value);
     Toast.show('Client deleted', 'info');
+    // Firebase delete (non-blocking)
+    FirebaseService.deleteClient(id).catch(() => {});
   }
 
 
@@ -1601,6 +1965,13 @@ const Actions = (() => {
     const clients  = State.getClients().map(c => c.id === clientId ? updated : c);
     State.setClients(clients);
     Store.saveClients(clients);
+    // Firebase write (non-blocking) — update only the changed fields
+    FirebaseService.updateClient(clientId, {
+      reminderCountTotal:  updated.reminderCountTotal,
+      reminderCountToday:  updated.reminderCountToday,
+      lastReminderDate:    updated.lastReminderDate,
+      lastMessagePreview:  updated.lastMessagePreview,
+    }).catch(() => {});
 
     // 🔥 FINAL ACTION — NO code after this
     Navigation.openWhatsApp(url);
@@ -1649,12 +2020,17 @@ const Actions = (() => {
       const idx = drafts.findIndex(d => d.id === id);
       if (idx === -1) { Toast.show('Template not found', 'error'); return; }
       drafts[idx] = { ...drafts[idx], name, message };
+      State.setDrafts(drafts);
+      Store.saveDrafts(drafts);
+      FirebaseService.updateDraft(id, { name, message }).catch(() => {});
     } else {
-      drafts.push({ id: Logic.uid(), name, message });
+      const newDraft = { id: Logic.uid(), name, message };
+      drafts.push(newDraft);
+      State.setDrafts(drafts);
+      Store.saveDrafts(drafts);
+      FirebaseService.addDraft(newDraft).catch(() => {});
     }
 
-    State.setDrafts(drafts);
-    Store.saveDrafts(drafts);
     Modal.close('modal-draft-edit');
     UI.renderDraftManageList();
     UI.renderStats();
@@ -1672,6 +2048,7 @@ const Actions = (() => {
     UI.renderDraftManageList();
     UI.renderStats();
     Toast.show('Template deleted', 'info');
+    FirebaseService.deleteDraft(id).catch(() => {});
   }
 
   function handleSearch(e) {
@@ -1763,27 +2140,52 @@ function bindEvents() {
    10. INIT
    ========================================= */
 function initApp() {
-  const clients = Store.loadClients();
-  const drafts  = Store.loadDrafts();
+  // ── PHASE 1: Instant UI from LocalStorage (offline-first) ──────────
+  const cachedClients = Store.loadClients();
+  const cachedDrafts  = Store.loadDrafts();
 
-  State.setClients(clients);
-  State.setDrafts(drafts);
-
-  if (clients.length === 0 && drafts.length === 0) {
-    seedDemoData();
-  }
+  State.setClients(cachedClients);
+  State.setDrafts(cachedDrafts);
 
   bindEvents();
-
   UI.renderClients();
   UI.renderStats();
+
+  // ── PHASE 2: Seed demo data only if truly empty ─────────────────────
+  const needsSeed = cachedClients.length === 0 && cachedDrafts.length === 0;
+
+  // ── PHASE 3: Firebase sync (after SDK ready) ─────────────────────────
+  function startFirebaseSync() {
+    FirebaseService.watchNetwork();
+
+    if (needsSeed && window._FB_READY) {
+      // First-run: seed to Firebase, listener will pick it up
+      seedDemoData();
+    } else {
+      // Normal: attach real-time listeners (they call UI.render on update)
+      FirebaseService.attachListeners();
+    }
+  }
+
+  if (window._FB_READY) {
+    startFirebaseSync();
+  } else {
+    // Firebase module loads asynchronously — wait for it
+    document.addEventListener('firebase-ready', startFirebaseSync, { once: true });
+    // Safety timeout: if Firebase never loads, show offline indicator
+    setTimeout(() => {
+      if (!window._FB_READY) {
+        FirebaseService.setSyncStatus('offline');
+        Toast.show('Firebase unavailable — running in offline mode', 'info');
+      }
+    }, 5000);
+  }
 }
 
 function seedDemoData() {
-  const draftId = Logic.uid();
   const drafts = [
     {
-      id:      draftId,
+      id:      Logic.uid(),
       name:    'Payment Reminder',
       message: 'Hi {name}, just a friendly reminder that your payment is due. Please let us know if you have any questions. Thank you! 🙏',
     },
@@ -1819,6 +2221,17 @@ function seedDemoData() {
   State.setDrafts(drafts);
   Store.saveClients(clients);
   Store.saveDrafts(drafts);
+  UI.renderClients();
+  UI.renderStats();
+
+  // Write seed data to Firebase (listener will confirm round-trip)
+  if (window._FB_READY) {
+    FirebaseService.seedIfEmpty(clients, drafts).then(() => {
+      FirebaseService.attachListeners();
+    }).catch(err => {
+      console.warn('[Seed] Firebase seed failed, running locally', err);
+    });
+  }
 }
 
 // Boot — script is at bottom of body so DOM is ready
